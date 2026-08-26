@@ -14,7 +14,314 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      homes: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string
+          country: string
+          created_at: string
+          estimated_value: number | null
+          id: string
+          label: string | null
+          lookup_source: string
+          lot_size_sqft: number | null
+          postal_code: string
+          property_type: string | null
+          square_feet: number | null
+          state: string
+          street: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+          value_as_of: string | null
+          year_built: number | null
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city: string
+          country?: string
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          label?: string | null
+          lookup_source?: string
+          lot_size_sqft?: number | null
+          postal_code: string
+          property_type?: string | null
+          square_feet?: number | null
+          state: string
+          street: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+          value_as_of?: string | null
+          year_built?: number | null
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string
+          country?: string
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          label?: string | null
+          lookup_source?: string
+          lot_size_sqft?: number | null
+          postal_code?: string
+          property_type?: string | null
+          square_feet?: number | null
+          state?: string
+          street?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+          value_as_of?: string | null
+          year_built?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_tools: {
+        Row: {
+          acquisition: string
+          already_owned: boolean
+          created_at: string
+          estimated_price: number | null
+          hours_saved: number | null
+          id: string
+          is_optional: boolean
+          project_id: string
+          tool_id: string | null
+          tool_name: string
+          user_id: string
+        }
+        Insert: {
+          acquisition?: string
+          already_owned?: boolean
+          created_at?: string
+          estimated_price?: number | null
+          hours_saved?: number | null
+          id?: string
+          is_optional?: boolean
+          project_id: string
+          tool_id?: string | null
+          tool_name: string
+          user_id: string
+        }
+        Update: {
+          acquisition?: string
+          already_owned?: boolean
+          created_at?: string
+          estimated_price?: number | null
+          hours_saved?: number | null
+          id?: string
+          is_optional?: boolean
+          project_id?: string
+          tool_id?: string | null
+          tool_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tools_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tools_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          estimate_notes: string | null
+          estimated_at: string | null
+          estimated_cost_high: number | null
+          estimated_cost_low: number | null
+          estimated_hours_high: number | null
+          estimated_hours_low: number | null
+          estimated_value_added: number | null
+          home_id: string
+          id: string
+          room_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          estimate_notes?: string | null
+          estimated_at?: string | null
+          estimated_cost_high?: number | null
+          estimated_cost_low?: number | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          estimated_value_added?: number | null
+          home_id: string
+          id?: string
+          room_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          estimate_notes?: string | null
+          estimated_at?: string | null
+          estimated_cost_high?: number | null
+          estimated_cost_low?: number | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          estimated_value_added?: number | null
+          home_id?: string
+          id?: string
+          room_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          area_sqft: number | null
+          ceiling_height_ft: number | null
+          created_at: string
+          floor_level: string
+          home_id: string
+          id: string
+          length_ft: number | null
+          name: string
+          notes: string | null
+          room_type: string
+          updated_at: string
+          user_id: string
+          width_ft: number | null
+        }
+        Insert: {
+          area_sqft?: number | null
+          ceiling_height_ft?: number | null
+          created_at?: string
+          floor_level?: string
+          home_id: string
+          id?: string
+          length_ft?: number | null
+          name: string
+          notes?: string | null
+          room_type?: string
+          updated_at?: string
+          user_id: string
+          width_ft?: number | null
+        }
+        Update: {
+          area_sqft?: number | null
+          ceiling_height_ft?: number | null
+          created_at?: string
+          floor_level?: string
+          home_id?: string
+          id?: string
+          length_ft?: number | null
+          name?: string
+          notes?: string | null
+          room_type?: string
+          updated_at?: string
+          user_id?: string
+          width_ft?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tools: {
+        Row: {
+          brand: string | null
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
