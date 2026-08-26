@@ -32,12 +32,12 @@ const STEPS = [
   {
     icon: ClipboardList,
     title: "Line up projects",
-    body: "Keep every improvement you're considering in one list, tied to the room it belongs to.",
+    body: "Keep every improvement you're considering in one list, with cost and labor estimates and its impact to your homes value.",
   },
   {
     icon: Wrench,
     title: "Know your tools",
-    body: "Track what's already in the garage so you only shop for what a project actually adds.",
+    body: "Track what's in your toolbox to estimate how long each project will take, and if there's a tool worth adding based on your projects.",
   },
 ];
 
@@ -61,11 +61,11 @@ function Landing() {
       <section className="mx-auto max-w-5xl px-4 pt-20 pb-16">
         <p className="label-caps">For homeowners who do the work themselves</p>
         <h1 className="mt-4 max-w-2xl text-5xl leading-[1.05] font-extrabold sm:text-6xl">
-          Your house, measured. Your projects, planned.
+          Your house. Your projects. One dashboard
         </h1>
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           Homebench starts with the one thing every estimate depends on: an accurate picture of your
-          home. Room dimensions, property details, and the tools already on your bench.
+          home. Room dimensions, property details, and the tools already in your bench.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
