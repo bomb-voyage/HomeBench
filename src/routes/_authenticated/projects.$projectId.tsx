@@ -162,10 +162,11 @@ function ProjectDetailPage() {
         ...current,
         { role: "assistant", content: response.question ?? "All set — ready to re-estimate." },
       ];
-      const updatedSpec = response.spec ? { ...project!.spec, ...response.spec } : project!.spec;
+      const currentSpec = (project!.spec ?? {}) as Record<string, unknown>;
+      const updatedSpec = response.spec ? { ...currentSpec, ...response.spec } : currentSpec;
       updateMutation.mutate({
         intakeState: updatedHistory,
-        spec: updatedSpec as Record<string, unknown>,
+        spec: updatedSpec,
       });
     },
     onError: () => setIsChatting(false),
