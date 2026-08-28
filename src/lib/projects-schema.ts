@@ -28,7 +28,7 @@ export const toolEstimateSchema = z.object({
   rental_price_per_day: z.number().nullable().optional(),
   hours_saved: z.number().nullable().optional(),
   rationale: z.string().nullable().optional(),
-  search_links: z.record(z.string()).nullable().optional(),
+  search_links: z.record(z.union([z.string(), z.null()])).nullable().optional(),
 });
 
 export type ToolEstimate = z.infer<typeof toolEstimateSchema>;
