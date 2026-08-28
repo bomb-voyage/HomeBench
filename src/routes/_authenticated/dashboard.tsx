@@ -39,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const { data: home, isLoading } = useQuery(homeQuery);
   const { data: rooms = [] } = useQuery(roomsQuery(home?.id));
+  const { data: projects = [] } = useQuery(projectsQuery(home?.id));
 
   if (isLoading) {
     return (
