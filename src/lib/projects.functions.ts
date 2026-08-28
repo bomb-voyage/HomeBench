@@ -85,8 +85,8 @@ export const updateProject = createServerFn({ method: "POST" })
     if (data.status !== undefined) update.status = data.status;
     if (data.scopeType !== undefined) update.scope_type = data.scopeType;
     if (data.roomId !== undefined) update.room_id = data.roomId;
-    if (data.spec !== undefined) update.spec = data.spec;
-    if (data.intakeState !== undefined) update.intake_state = data.intakeState;
+    if (data.spec !== undefined) update.spec = data.spec as unknown as typeof update.spec;
+    if (data.intakeState !== undefined) update.intake_state = data.intakeState as unknown as typeof update.intake_state;
 
     const { data: project, error } = await context.supabase
       .from("projects")
