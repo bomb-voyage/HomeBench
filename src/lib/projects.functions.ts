@@ -158,14 +158,12 @@ export const generateEstimate = createServerFn({ method: "POST" })
   });
 
 async function saveEstimateInternal(
-  supabase: ReturnType<typeof import("@/integrations/supabase/client.server").createClient> extends Promise<infer T> ? T : never,
+  supabase: SupabaseClient<Database>,
   userId: string,
   projectId: string,
   spec: Record<string, unknown>,
   estimate: ProjectEstimateOutput,
 ) {
-  type SupabaseClient = typeof supabase;
-
   // Snapshot estimate
   const { error: snapshotError } = await supabase.from("project_estimates").insert({
     user_id: userId,
