@@ -100,6 +100,13 @@ function ProjectDetailPage() {
     },
   });
 
+  useEffect(() => {
+    if (project) {
+      setDraftTitle(project.title);
+      setDraftDescription(project.description ?? "");
+    }
+  }, [project?.title, project?.description]);
+
   const updateMutation = useMutation({
     mutationFn: (values: { title?: string; description?: string | null; status?: string; scopeType?: string; roomId?: string | null; spec?: Record<string, unknown>; intakeState?: IntakeMessage[] }) =>
       updateProject({
