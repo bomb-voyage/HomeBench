@@ -168,7 +168,7 @@ async function saveEstimateInternal(
   const { error: snapshotError } = await supabase.from("project_estimates").insert({
     user_id: userId,
     project_id: projectId,
-    spec,
+    spec: spec as unknown as import("@/integrations/supabase/types").Database["public"]["Tables"]["project_estimates"]["Insert"]["spec"],
     estimated_cost_low: estimate.estimated_cost_low ?? null,
     estimated_cost_high: estimate.estimated_cost_high ?? null,
     estimated_hours_low: estimate.estimated_hours_low ?? null,
