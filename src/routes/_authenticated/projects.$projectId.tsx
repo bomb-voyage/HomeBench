@@ -134,8 +134,8 @@ function ProjectDetailPage() {
     onError: () => setIsDeleting(false),
   });
 
-  const chatMutation = useMutation({
-    mutationFn: (message: string) =>
+  const chatMutation = useMutation<IntakeResponse, Error, string>({
+    mutationFn: (message) =>
       nextIntakeQuestion({
         data: {
           projectId,
