@@ -148,11 +148,48 @@ function DashboardPage() {
         </Card>
 
         <div className="space-y-4">
-          <Upcoming
-            icon={ClipboardList}
-            title="Projects"
-            body="Add improvements per room and get AI cost and labor-hour estimates."
-          />
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="size-4 text-primary" />
+                  <p className="font-semibold">Projects</p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/projects/new">
+                    <Plus className="size-3" />
+                    Add
+                  </Link>
+                </Button>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {projects.length === 0
+                  ? "No projects yet. Describe one to get cost and labor estimates."
+                  : `${projects.length} project${projects.length === 1 ? "" : "s"} on your list.`}
+              </p>
+              {projects.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {projects.slice(0, 3).map((project) => (
+                    <li key={project.id}>
+                      <Link
+                        to="/projects/$projectId"
+                        params={{ projectId: project.id }}
+                        className="flex items-center justify-between rounded p-2 text-sm hover:bg-muted"
+                      >
+                        <span className="font-medium">{project.title}</span>
+                        <span className="stat-figure text-xs text-muted-foreground">
+                          {project.estimated_cost_low != null
+                            ? `${formatCurrency(project.estimated_cost_low)}–${formatCurrency(project.estimated_cost_high)}`
+                            : "Draft"}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
           <Upcoming
             icon={Wrench}
             title="Tool inventory"
