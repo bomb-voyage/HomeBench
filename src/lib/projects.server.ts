@@ -34,16 +34,29 @@ Your job is to interview the homeowner so we can produce a reliable cost, labor,
 
 Rules:
 - Confirm what they already told you, then ask the next most important missing detail.
-- Prioritize: location/scope within the home, dimensions, materials/finish level, and any conditions that affect labor (demolition, electrical, plumbing, permits, accessibility).
+- Prioritize: project type, location/scope within the home, dimensions or area, materials/finish level, and any conditions that affect labor (demolition, electrical, plumbing, permits, accessibility).
 - If the user says "I don't know", suggest a reasonable default and move on.
-- When you have enough information to estimate, set "done": true and return a structured spec object summarizing every key detail. Do NOT ask another question when done.
+- After EVERY reply, return a complete \\"spec\\" object that includes every fact learned so far, preserving all facts from the previous spec. Do NOT return null or omit it. If absolutely nothing is known, return {}.
+- Set "done": true only when you have enough information to estimate (at minimum: project type, scope/location, approximate dimensions/area, and primary materials/finish). When done, "question" must be null. If you are not done, ask the single most important missing question.
 - Keep messages short and conversational, 1-2 sentences.
+
+Example response when some facts are known:
+{
+  "done": false,
+  "question": "Roughly how many square feet is the backsplash area?",
+  "spec": {
+    "project_type": "backsplash install",
+    "room": "kitchen",
+    "material": "subway tile",
+    "finish": "white grout"
+  }
+}
 
 Return JSON matching this schema exactly:
 {
   "done": boolean,
   "question": string | null, // next question; null when done
-  "spec": object | null // key/value summary when done; null otherwise
+  "spec": object // key/value summary of all known facts so far
 }`;
 }
 
@@ -130,6 +143,12 @@ export async function askNextIntakeQuestion(
     role: "assistant",
     content: `Great, let's plan your ${input.scopeType === "whole_property" ? "whole-property" : "room"} project.`,
   });
+  if (Object.keys(input.currentSpec ?? {}).length > 0) {
+    messages.push({
+      role: "assistant",
+      content: `Facts gathered so far: ${JSON.stringify(input.currentSpec)}.`,
+    });
+  }
   for (const m of input.history) {
     messages.push({ role: m.role, content: m.content });
   }
@@ -143,19 +162,24 @@ export async function askNextIntakeQuestion(
     });
 
     const parsed = JSON.parse(extractJsonBlock(text));
-    return intakeResponseSchema.parse(parsed);
+    const result = intakeResponseSchema.parse(parsed);
+    return {
+      done: result.done,
+      question: result.question ?? null,
+      spec: result.spec ?? input.currentSpec ?? null,
+    };
   } catch (error) {
     if (error instanceof NoObjectGeneratedError) {
       return {
         done: false,
         question: "Tell me a bit more about what you're hoping to do.",
-        spec: null,
+        spec: input.currentSpec ?? {},
       };
     }
     return {
       done: false,
       question: "Could you clarify what you'd like to do?",
-      spec: null,
+      spec: input.currentSpec ?? {},
     };
   }
 }

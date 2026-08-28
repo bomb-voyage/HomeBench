@@ -145,6 +145,7 @@ function ProjectDetailPage() {
           title: project!.title,
           message,
           history: (project!.intake_state as IntakeMessage[]) ?? [],
+          currentSpec: (project!.spec ?? {}) as Record<string, unknown>,
         },
       }) as Promise<IntakeResponse>,
     onMutate: (message) => {
