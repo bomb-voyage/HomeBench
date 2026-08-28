@@ -42,7 +42,7 @@ import {
   generateEstimate,
   nextIntakeQuestion,
 } from "@/lib/projects.functions";
-import { PROJECT_STATUSES, PROJECT_SCOPE_TYPES, type IntakeMessage } from "@/lib/projects-schema";
+import { PROJECT_STATUSES, PROJECT_SCOPE_TYPES, type IntakeMessage, type IntakeResponse } from "@/lib/projects-schema";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
