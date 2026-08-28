@@ -146,7 +146,7 @@ function ProjectDetailPage() {
           message,
           history: (project!.intake_state as IntakeMessage[]) ?? [],
         },
-      }),
+      }) as Promise<IntakeResponse>,
     onMutate: (message) => {
       setChatInput("");
       setIsChatting(true);
