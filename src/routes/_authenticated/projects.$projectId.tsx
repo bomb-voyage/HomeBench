@@ -397,8 +397,13 @@ function ProjectDetailPage() {
                 <Label htmlFor="description">Notes</Label>
                 <Textarea
                   id="description"
-                  value={project.description ?? ""}
-                  onChange={(e) => updateMutation.mutate({ description: e.target.value })}
+                  value={draftDescription}
+                  onChange={(e) => setDraftDescription(e.target.value)}
+                  onBlur={() => {
+                    if (draftDescription !== (project.description ?? "")) {
+                      updateMutation.mutate({ description: draftDescription });
+                    }
+                  }}
                   placeholder="Add any extra context…"
                   rows={3}
                 />
