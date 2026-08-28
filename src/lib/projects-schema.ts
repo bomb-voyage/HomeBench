@@ -13,7 +13,9 @@ export const intakeMessageSchema = z.object({
 
 export type IntakeMessage = z.infer<typeof intakeMessageSchema>;
 
-export const projectSpecSchema = z.record(z.unknown()).describe("Free-form key/value project specifications");
+export const projectSpecSchema = z.record(
+  z.union([z.string(), z.number(), z.boolean(), z.null()])
+).describe("Free-form key/value project specifications");
 
 export type ProjectSpec = z.infer<typeof projectSpecSchema>;
 
