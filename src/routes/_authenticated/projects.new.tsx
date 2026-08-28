@@ -76,7 +76,7 @@ function NewProjectPage() {
           message,
           history: messages,
         },
-      });
+      }) as Promise<IntakeResponse>;
     },
     onMutate: (message) => {
       setMessages((prev) => [...prev, { role: "user", content: message }]);
