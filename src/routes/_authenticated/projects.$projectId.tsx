@@ -533,9 +533,9 @@ function StepTools({ tools }: { tools: Array<{
             {tool.hours_saved != null && tool.hours_saved > 0 && (
               <span className="text-success">Saves {formatHours(tool.hours_saved)}</span>
             )}
-            {tool.search_links?.buy && (
+            {tool.search_links?.["buy"] && (
               <a
-                href={tool.search_links.buy}
+                href={tool.search_links["buy"]}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
@@ -543,9 +543,9 @@ function StepTools({ tools }: { tools: Array<{
                 Buy <ExternalLink className="size-3" />
               </a>
             )}
-            {tool.search_links?.rent && (
+            {tool.search_links?.["rent"] && (
               <a
-                href={tool.search_links.rent}
+                href={tool.search_links["rent"]}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
