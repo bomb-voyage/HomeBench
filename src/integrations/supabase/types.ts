@@ -104,6 +104,106 @@ export type Database = {
         }
         Relationships: []
       }
+      project_estimates: {
+        Row: {
+          created_at: string
+          estimate_notes: string | null
+          estimated_cost_high: number | null
+          estimated_cost_low: number | null
+          estimated_hours_high: number | null
+          estimated_hours_low: number | null
+          estimated_value_added: number | null
+          estimated_value_added_pct: number | null
+          id: string
+          project_id: string
+          spec: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimate_notes?: string | null
+          estimated_cost_high?: number | null
+          estimated_cost_low?: number | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          estimated_value_added?: number | null
+          estimated_value_added_pct?: number | null
+          id?: string
+          project_id: string
+          spec?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estimate_notes?: string | null
+          estimated_cost_high?: number | null
+          estimated_cost_low?: number | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          estimated_value_added?: number | null
+          estimated_value_added_pct?: number | null
+          id?: string
+          project_id?: string
+          spec?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_estimates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_steps: {
+        Row: {
+          created_at: string
+          description: string | null
+          estimated_hours_high: number | null
+          estimated_hours_low: number | null
+          id: string
+          project_id: string
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          id?: string
+          project_id: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          id?: string
+          project_id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_steps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tools: {
         Row: {
           acquisition: string
@@ -114,6 +214,11 @@ export type Database = {
           id: string
           is_optional: boolean
           project_id: string
+          rationale: string | null
+          rental_price_per_day: number | null
+          role: string
+          search_links: Json | null
+          step_id: string | null
           tool_id: string | null
           tool_name: string
           user_id: string
@@ -127,6 +232,11 @@ export type Database = {
           id?: string
           is_optional?: boolean
           project_id: string
+          rationale?: string | null
+          rental_price_per_day?: number | null
+          role?: string
+          search_links?: Json | null
+          step_id?: string | null
           tool_id?: string | null
           tool_name: string
           user_id: string
@@ -140,6 +250,11 @@ export type Database = {
           id?: string
           is_optional?: boolean
           project_id?: string
+          rationale?: string | null
+          rental_price_per_day?: number | null
+          role?: string
+          search_links?: Json | null
+          step_id?: string | null
           tool_id?: string | null
           tool_name?: string
           user_id?: string
@@ -150,6 +265,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tools_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "project_steps"
             referencedColumns: ["id"]
           },
           {
@@ -166,15 +288,21 @@ export type Database = {
           created_at: string
           description: string | null
           estimate_notes: string | null
+          estimate_status: string
           estimated_at: string | null
           estimated_cost_high: number | null
           estimated_cost_low: number | null
           estimated_hours_high: number | null
           estimated_hours_low: number | null
           estimated_value_added: number | null
+          estimated_value_added_pct: number | null
           home_id: string
           id: string
+          intake_state: Json | null
+          reference_image_path: string | null
           room_id: string | null
+          scope_type: string
+          spec: Json | null
           status: string
           title: string
           updated_at: string
@@ -184,15 +312,21 @@ export type Database = {
           created_at?: string
           description?: string | null
           estimate_notes?: string | null
+          estimate_status?: string
           estimated_at?: string | null
           estimated_cost_high?: number | null
           estimated_cost_low?: number | null
           estimated_hours_high?: number | null
           estimated_hours_low?: number | null
           estimated_value_added?: number | null
+          estimated_value_added_pct?: number | null
           home_id: string
           id?: string
+          intake_state?: Json | null
+          reference_image_path?: string | null
           room_id?: string | null
+          scope_type?: string
+          spec?: Json | null
           status?: string
           title: string
           updated_at?: string
@@ -202,15 +336,21 @@ export type Database = {
           created_at?: string
           description?: string | null
           estimate_notes?: string | null
+          estimate_status?: string
           estimated_at?: string | null
           estimated_cost_high?: number | null
           estimated_cost_low?: number | null
           estimated_hours_high?: number | null
           estimated_hours_low?: number | null
           estimated_value_added?: number | null
+          estimated_value_added_pct?: number | null
           home_id?: string
           id?: string
+          intake_state?: Json | null
+          reference_image_path?: string | null
           room_id?: string | null
+          scope_type?: string
+          spec?: Json | null
           status?: string
           title?: string
           updated_at?: string
