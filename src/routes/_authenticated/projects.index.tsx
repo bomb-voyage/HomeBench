@@ -17,7 +17,7 @@ import {
   estimateStatusLabel,
 } from "@/lib/projects-data";
 
-export const Route = createFileRoute("/_authenticated/projects")({
+export const Route = createFileRoute("/_authenticated/projects/")({
   head: () => ({
     meta: [
       { title: "Projects — Homebench" },
