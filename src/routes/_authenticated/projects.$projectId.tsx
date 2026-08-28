@@ -228,8 +228,18 @@ function ProjectDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <Input
-              value={project.title}
-              onChange={(e) => updateMutation.mutate({ title: e.target.value })}
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onBlur={() => {
+                if (draftTitle !== project.title) {
+                  updateMutation.mutate({ title: draftTitle });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               className="h-auto w-auto min-w-[240px] border-none bg-transparent px-0 text-3xl font-extrabold shadow-none focus-visible:ring-0"
             />
           </div>
