@@ -59,15 +59,15 @@ export const createProject = createServerFn({ method: "POST" })
       scope_type: data.scopeType,
       title: data.title,
       description: data.description ?? null,
-      spec: data.spec as unknown as import("@/integrations/supabase/types").Database["public"]["Tables"]["projects"]["Insert"]["spec"],
-      intake_state: data.intakeState as unknown as import("@/integrations/supabase/types").Database["public"]["Tables"]["projects"]["Insert"]["intake_state"],
+      spec: data.spec,
+      intake_state: data.intakeState,
       status: "todo" as const,
       estimate_status: "draft" as const,
     };
 
     const { data: project, error } = await context.supabase
       .from("projects")
-      .insert(insert)
+      .insert(insert as any)
       .select()
       .single();
 
