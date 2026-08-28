@@ -65,8 +65,8 @@ function NewProjectPage() {
     }
   }, [messages]);
 
-  const askMutation = useMutation({
-    mutationFn: (message: string) => {
+  const askMutation = useMutation<IntakeResponse, Error, string>({
+    mutationFn: (message) => {
       return nextIntakeQuestion({
         data: {
           homeId: home!.id,
