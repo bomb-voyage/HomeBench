@@ -19,7 +19,7 @@ import {
   generateEstimate,
   updateProject,
 } from "@/lib/projects.functions";
-import { PROJECT_SCOPE_TYPES, type IntakeMessage } from "@/lib/projects-schema";
+import { PROJECT_SCOPE_TYPES, type IntakeMessage, type IntakeResponse } from "@/lib/projects-schema";
 import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/projects/new")({
