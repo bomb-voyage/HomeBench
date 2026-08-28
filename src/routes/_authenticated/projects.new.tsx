@@ -75,6 +75,7 @@ function NewProjectPage() {
           title: title || undefined,
           message,
           history: messages,
+          currentSpec: spec,
         },
       }) as Promise<IntakeResponse>;
     },

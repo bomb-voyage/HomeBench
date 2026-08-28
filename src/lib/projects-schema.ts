@@ -61,7 +61,7 @@ export type ProjectEstimateOutput = z.infer<typeof projectEstimateSchema>;
 export const intakeResponseSchema = z.object({
   done: z.boolean().default(false),
   question: z.string().nullable().optional(),
-  spec: projectSpecSchema.nullable().optional(),
+  spec: projectSpecSchema,
 });
 
 export type IntakeResponse = z.infer<typeof intakeResponseSchema>;
@@ -74,6 +74,7 @@ export const nextQuestionInputSchema = z.object({
   title: z.string().min(1).optional(),
   message: z.string().min(1),
   history: z.array(intakeMessageSchema).default([]),
+  currentSpec: projectSpecSchema.default({}),
 });
 
 export type NextQuestionInput = z.infer<typeof nextQuestionInputSchema>;
