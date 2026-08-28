@@ -192,7 +192,7 @@ async function saveEstimateInternal(
       estimate_notes: estimate.estimate_notes ?? null,
       estimated_at: new Date().toISOString(),
       estimate_status: "estimated",
-      spec,
+      spec: spec as unknown as import("@/integrations/supabase/types").Database["public"]["Tables"]["projects"]["Update"]["spec"],
     })
     .eq("id", projectId)
     .eq("user_id", userId);
