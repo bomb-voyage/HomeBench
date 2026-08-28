@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ClipboardList, Wrench, TrendingUp } from "lucide-react";
+import { ArrowRight, ClipboardList, Wrench, TrendingUp, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import {
@@ -12,6 +12,7 @@ import {
   totalRoomArea,
 } from "@/lib/home-data";
 import { roomTypeLabel } from "@/lib/property-schema";
+import { projectsQuery, formatHours, formatPercent } from "@/lib/projects-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
