@@ -74,6 +74,8 @@ function ProjectDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [isChatting, setIsChatting] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftDescription, setDraftDescription] = useState("");
 
   const estimateMutation = useMutation({
     mutationFn: () =>
