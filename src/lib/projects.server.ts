@@ -106,6 +106,18 @@ Guidelines:
 - Keep estimates in a reasonable range. Return "estimate_notes" explaining assumptions.`;
 }
 
+function extractJsonBlock(text: string): string {
+  const trimmed = text.trim();
+  const blockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (blockMatch) return blockMatch[1].trim();
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1);
+  }
+  return trimmed;
+}
+
 export async function askNextIntakeQuestion(
   input: NextQuestionInput,
   apiKey: string,
@@ -128,10 +140,9 @@ export async function askNextIntakeQuestion(
       model,
       messages,
       system: intakeSystemPrompt(),
-      providerOptions: { lovable: { response_format: { type: "json_object" } } },
     });
 
-    const parsed = JSON.parse(text);
+    const parsed = JSON.parse(extractJsonBlock(text));
     return intakeResponseSchema.parse(parsed);
   } catch (error) {
     if (error instanceof NoObjectGeneratedError) {
@@ -141,7 +152,11 @@ export async function askNextIntakeQuestion(
         spec: null,
       };
     }
-    throw error;
+    return {
+      done: false,
+      question: "Could you clarify what you'd like to do?",
+      spec: null,
+    };
   }
 }
 
@@ -162,10 +177,9 @@ export async function generateProjectEstimate(
       },
     ],
     system: estimateSystemPrompt({ ...input, ...context }),
-    providerOptions: { lovable: { response_format: { type: "json_object" } } },
   });
 
-  const parsed = JSON.parse(text);
+  const parsed = JSON.parse(extractJsonBlock(text));
   return projectEstimateSchema.parse(parsed);
 }
 
