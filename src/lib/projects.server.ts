@@ -109,7 +109,7 @@ Guidelines:
 function extractJsonBlock(text: string): string {
   const trimmed = text.trim();
   const blockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (blockMatch) return blockMatch[1].trim();
+  if (blockMatch && blockMatch[1]) return blockMatch[1].trim();
   const firstBrace = trimmed.indexOf("{");
   const lastBrace = trimmed.lastIndexOf("}");
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
