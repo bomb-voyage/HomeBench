@@ -215,6 +215,17 @@ function ProjectDetailPage() {
     }
   }
 
+  // Deduplicate the flat tool list by normalized name — the same tool can
+  // appear under several steps and in the top-level list.
+  const uniqueTools: typeof tools = [];
+  const seenToolNames = new Set<string>();
+  for (const tool of tools) {
+    const key = tool.tool_name.trim().toLowerCase();
+    if (seenToolNames.has(key)) continue;
+    seenToolNames.add(key);
+    uniqueTools.push(tool);
+  }
+
   const spec = (project.spec as Record<string, unknown>) ?? {};
 
   return (
