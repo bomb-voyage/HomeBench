@@ -215,6 +215,17 @@ function ProjectDetailPage() {
     }
   }
 
+  // Deduplicate the flat tool list by normalized name — the same tool can
+  // appear under several steps and in the top-level list.
+  const uniqueTools: typeof tools = [];
+  const seenToolNames = new Set<string>();
+  for (const tool of tools) {
+    const key = tool.tool_name.trim().toLowerCase();
+    if (seenToolNames.has(key)) continue;
+    seenToolNames.add(key);
+    uniqueTools.push(tool);
+  }
+
   const spec = (project.spec as Record<string, unknown>) ?? {};
 
   return (
@@ -432,12 +443,12 @@ function ProjectDetailPage() {
               <CardDescription>Required and recommended tools</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {tools.length === 0 ? (
+              {uniqueTools.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No tools listed yet. Generate an estimate to see required and recommended tools.
                 </p>
               ) : (
-                tools.map((tool) => <ToolRow key={tool.id} tool={tool} />)
+                uniqueTools.map((tool) => <ToolRow key={tool.id} tool={tool} />)
               )}
             </CardContent>
           </Card>
