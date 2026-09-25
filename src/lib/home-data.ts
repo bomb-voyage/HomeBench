@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import type { HomeFeatures } from "./property-schema";
 import { supabase } from "@/integrations/supabase/client";
 
 export type HomeRow = {
@@ -19,6 +20,7 @@ export type HomeRow = {
   property_type: string | null;
   estimated_value: number | null;
   lookup_source: string;
+  features: HomeFeatures | null;
 };
 
 export type RoomRow = {

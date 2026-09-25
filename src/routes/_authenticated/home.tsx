@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
+import type { HomeFeatures } from "@/lib/property-schema";
 import { homeQuery, type HomeRow } from "@/lib/home-data";
 import { lookupProperty } from "@/lib/property.functions";
 import { Button } from "@/components/ui/button";
@@ -113,12 +114,16 @@ function HomeDetailsPage() {
   const { data: home, isLoading } = useQuery(homeQuery);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [source, setSource] = useState("manual");
+  const [features, setFeatures] = useState<HomeFeatures>({});
+  const setFeat = <K extends keyof HomeFeatures>(k: K, v: HomeFeatures[K]) =>
+    setFeatures((prev) => ({ ...prev, [k]: v }));
   const runLookup = useServerFn(lookupProperty);
 
   useEffect(() => {
     if (home) {
       setForm(toForm(home));
       setSource(home.lookup_source);
+      setFeatures(home.features ?? {});
     }
   }, [home]);
 
@@ -148,6 +153,7 @@ function HomeDetailsPage() {
           property_type: result.basics?.propertyType ?? prev.property_type,
           estimated_value: result.basics?.estimatedValue?.toString() ?? prev.estimated_value,
         }));
+        setFeatures((prev) => ({ ...prev, ...result.basics?.features }));
         setSource(result.source);
         toast.success(result.message);
         return;
@@ -179,6 +185,7 @@ function HomeDetailsPage() {
         property_type: normalizeType(form.property_type) || null,
         estimated_value: numOrNull(form.estimated_value),
         lookup_source: source,
+        features: features as Record<string, string | number | boolean>,
       };
 
       if (home) {
@@ -382,6 +389,58 @@ function HomeDetailsPage() {
               <p className="text-xs text-muted-foreground">
                 Used later as the starting point for value-added estimates.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Home features</CardTitle>
+            <CardDescription>
+              Filled from the public record when available. Tick or correct anything we missed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="heating">Heating type</Label>
+              <Input id="heating" placeholder="e.g. Forced air" value={features.heating_type ?? ""} onChange={(e) => setFeat("heating_type", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cooling">Cooling type</Label>
+              <Input id="cooling" placeholder="e.g. Central AC" value={features.cooling_type ?? ""} onChange={(e) => setFeat("cooling_type", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="stories">Stories</Label>
+              <Input id="stories" inputMode="numeric" value={features.stories?.toString() ?? ""} onChange={(e) => setFeat("stories", numOrNull(e.target.value) ?? undefined)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="garage_spaces">Garage spaces</Label>
+              <Input id="garage_spaces" inputMode="numeric" value={features.garage_spaces?.toString() ?? ""} onChange={(e) => setFeat("garage_spaces", numOrNull(e.target.value) ?? undefined)} />
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-3 sm:col-span-2 lg:col-span-4">
+              {(
+                [
+                  ["garage", "Garage"],
+                  ["basement", "Basement"],
+                  ["pool", "Pool"],
+                  ["balcony", "Balcony / deck"],
+                  ["fireplace", "Fireplace"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="size-4 accent-primary"
+                    checked={Boolean(features[key])}
+                    onChange={(e) => setFeat(key, e.target.checked)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <div className="space-y-2 sm:col-span-2 lg:col-span-4">
+              <Label htmlFor="structures">Additional structures</Label>
+              <Input id="structures" placeholder="e.g. Detached shed, guest house" value={features.additional_structures ?? ""} onChange={(e) => setFeat("additional_structures", e.target.value)} />
             </div>
           </CardContent>
         </Card>

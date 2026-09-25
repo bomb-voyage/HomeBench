@@ -18,6 +18,20 @@ export type PropertyBasics = {
   lotSizeSqft: number | null;
   propertyType: string | null;
   estimatedValue: number | null;
+  features: HomeFeatures;
+};
+
+export type HomeFeatures = {
+  heating_type?: string;
+  cooling_type?: string;
+  garage?: boolean;
+  garage_spaces?: number;
+  stories?: number;
+  basement?: boolean;
+  pool?: boolean;
+  balcony?: boolean;
+  fireplace?: boolean;
+  additional_structures?: string;
 };
 
 export type PropertyLookupResult = {
@@ -35,6 +49,7 @@ export const emptyBasics: PropertyBasics = {
   lotSizeSqft: null,
   propertyType: null,
   estimatedValue: null,
+  features: {},
 };
 
 export const ROOM_TYPES = [
