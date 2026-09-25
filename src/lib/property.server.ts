@@ -61,6 +61,23 @@ export async function lookupPropertyBasics(
     }
 
     const row = record as Record<string, unknown>;
+    const f = (row["features"] ?? {}) as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
+    const bool = (v: unknown) => (typeof v === "boolean" ? v : undefined);
+    const features = Object.fromEntries(
+      Object.entries({
+        heating_type: str(f["heatingType"]) ?? (f["heating"] === true ? "Yes" : undefined),
+        cooling_type: str(f["coolingType"]) ?? (f["cooling"] === true ? "Yes" : undefined),
+        garage: bool(f["garage"]),
+        garage_spaces: num(f["garageSpaces"]) ?? undefined,
+        stories: num(f["floorCount"]) ?? undefined,
+        pool: bool(f["pool"]),
+        fireplace: bool(f["fireplace"]),
+      }).filter(([, v]) => v !== undefined),
+    );
+    const assessments = (row["taxAssessments"] ?? {}) as Record<string, { value?: number }>;
+    const latestYear = Object.keys(assessments).sort().pop();
+    const assessed = latestYear ? num(assessments[latestYear]?.value) : null;
     const basics = {
       ...emptyBasics,
       squareFeet: num(row["squareFootage"]),
@@ -69,10 +86,11 @@ export async function lookupPropertyBasics(
       yearBuilt: num(row["yearBuilt"]),
       lotSizeSqft: num(row["lotSize"]),
       propertyType: typeof row["propertyType"] === "string" ? row["propertyType"] : null,
-      estimatedValue: num((row["taxAssessments"] as { value?: number } | undefined)?.value),
+      estimatedValue: assessed ?? num(row["lastSalePrice"]),
+      features,
     };
 
-    const anyValue = Object.values(basics).some((value) => value !== null);
+    const anyValue = Object.values(basics).some((value) => value !== null && !(typeof value === "object" && Object.keys(value).length === 0));
     return {
       status: anyValue ? "found" : "not_found",
       source: anyValue ? "rentcast" : "manual",
