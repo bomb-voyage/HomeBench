@@ -443,12 +443,12 @@ function ProjectDetailPage() {
               <CardDescription>Required and recommended tools</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {tools.length === 0 ? (
+              {uniqueTools.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No tools listed yet. Generate an estimate to see required and recommended tools.
                 </p>
               ) : (
-                tools.map((tool) => <ToolRow key={tool.id} tool={tool} />)
+                uniqueTools.map((tool) => <ToolRow key={tool.id} tool={tool} />)
               )}
             </CardContent>
           </Card>
