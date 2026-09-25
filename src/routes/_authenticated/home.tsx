@@ -185,7 +185,7 @@ function HomeDetailsPage() {
         property_type: normalizeType(form.property_type) || null,
         estimated_value: numOrNull(form.estimated_value),
         lookup_source: source,
-        features,
+        features: features as Record<string, string | number | boolean>,
       };
 
       if (home) {
