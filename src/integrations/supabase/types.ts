@@ -22,6 +22,7 @@ export type Database = {
           country: string
           created_at: string
           estimated_value: number | null
+          features: Json
           id: string
           label: string | null
           lookup_source: string
@@ -44,6 +45,7 @@ export type Database = {
           country?: string
           created_at?: string
           estimated_value?: number | null
+          features?: Json
           id?: string
           label?: string | null
           lookup_source?: string
@@ -66,6 +68,7 @@ export type Database = {
           country?: string
           created_at?: string
           estimated_value?: number | null
+          features?: Json
           id?: string
           label?: string | null
           lookup_source?: string
