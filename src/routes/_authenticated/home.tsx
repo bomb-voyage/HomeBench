@@ -80,6 +80,26 @@ function toForm(home: HomeRow): FormState {
   };
 }
 
+const PROPERTY_TYPES = ["House", "Townhome", "Apartment/Condo"];
+
+function normalizeType(value: string) {
+  const v = value.toLowerCase();
+  if (!v) return "";
+  if (v.includes("town")) return "Townhome";
+  if (v.includes("condo") || v.includes("apart")) return "Apartment/Condo";
+  return "House";
+}
+
+function digitsOnly(value: string) {
+  return value.replace(/[^0-9.]/g, "").replace(/\.(?=.*\.)/g, "").replace(/\.\d*$/, "");
+}
+
+function withCommas(value: string) {
+  const n = Number(value.replace(/[$,]/g, ""));
+  if (!value || !Number.isFinite(n)) return value;
+  return Math.round(n).toLocaleString("en-US");
+}
+
 function numOrNull(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -156,7 +176,7 @@ function HomeDetailsPage() {
         bathrooms: numOrNull(form.bathrooms),
         year_built: numOrNull(form.year_built),
         lot_size_sqft: numOrNull(form.lot_size_sqft),
-        property_type: form.property_type.trim() || null,
+        property_type: normalizeType(form.property_type) || null,
         estimated_value: numOrNull(form.estimated_value),
         lookup_source: source,
       };
@@ -219,6 +239,8 @@ function HomeDetailsPage() {
               <Label htmlFor="street">Street address</Label>
               <Input
                 id="street"
+                name="street-address"
+                autoComplete="address-line1"
                 required
                 value={form.street}
                 onChange={(e) => set("street")(e.target.value)}
@@ -227,12 +249,14 @@ function HomeDetailsPage() {
             <div className="grid gap-4 sm:grid-cols-[1fr_2fr]">
               <div className="space-y-2">
                 <Label htmlFor="unit">Unit</Label>
-                <Input id="unit" value={form.unit} onChange={(e) => set("unit")(e.target.value)} />
+                <Input id="unit" name="unit" autoComplete="address-line2" value={form.unit} onChange={(e) => set("unit")(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
                 <Input
                   id="city"
+                  name="city"
+                  autoComplete="address-level2"
                   required
                   value={form.city}
                   onChange={(e) => set("city")(e.target.value)}
@@ -244,6 +268,8 @@ function HomeDetailsPage() {
                 <Label htmlFor="state">State</Label>
                 <Input
                   id="state"
+                  name="state"
+                  autoComplete="address-level1"
                   required
                   maxLength={2}
                   value={form.state}
@@ -254,6 +280,8 @@ function HomeDetailsPage() {
                 <Label htmlFor="postal">ZIP code</Label>
                 <Input
                   id="postal"
+                  name="postal-code"
+                  autoComplete="postal-code"
                   required
                   value={form.postal_code}
                   onChange={(e) => set("postal_code")(e.target.value)}
@@ -287,8 +315,8 @@ function HomeDetailsPage() {
                 <Input
                   id="sqft"
                   inputMode="decimal"
-                  value={form.square_feet}
-                  onChange={(e) => set("square_feet")(e.target.value)}
+                  value={withCommas(form.square_feet)}
+                  onChange={(e) => set("square_feet")(digitsOnly(e.target.value))}
                 />
               </div>
               <div className="space-y-2">
@@ -323,17 +351,23 @@ function HomeDetailsPage() {
                 <Input
                   id="lot"
                   inputMode="decimal"
-                  value={form.lot_size_sqft}
-                  onChange={(e) => set("lot_size_sqft")(e.target.value)}
+                  value={withCommas(form.lot_size_sqft)}
+                  onChange={(e) => set("lot_size_sqft")(digitsOnly(e.target.value))}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Property type</Label>
-                <Input
+                <select
                   id="type"
-                  value={form.property_type}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={normalizeType(form.property_type)}
                   onChange={(e) => set("property_type")(e.target.value)}
-                />
+                >
+                  <option value="">Select…</option>
+                  {PROPERTY_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="space-y-2">
@@ -341,8 +375,9 @@ function HomeDetailsPage() {
               <Input
                 id="value"
                 inputMode="decimal"
-                value={form.estimated_value}
-                onChange={(e) => set("estimated_value")(e.target.value)}
+                value={form.estimated_value ? `$${withCommas(form.estimated_value)}` : ""}
+                placeholder="$0"
+                onChange={(e) => set("estimated_value")(digitsOnly(e.target.value))}
               />
               <p className="text-xs text-muted-foreground">
                 Used later as the starting point for value-added estimates.
