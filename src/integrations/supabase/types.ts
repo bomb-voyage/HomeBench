@@ -109,6 +109,10 @@ export type Database = {
       }
       project_estimates: {
         Row: {
+          cheap_cost_high: number | null
+          cheap_cost_low: number | null
+          cheap_hours_high: number | null
+          cheap_hours_low: number | null
           created_at: string
           estimate_notes: string | null
           estimated_cost_high: number | null
@@ -117,12 +121,20 @@ export type Database = {
           estimated_hours_low: number | null
           estimated_value_added: number | null
           estimated_value_added_pct: number | null
+          fast_cost_high: number | null
+          fast_cost_low: number | null
+          fast_hours_high: number | null
+          fast_hours_low: number | null
           id: string
           project_id: string
           spec: Json
           user_id: string
         }
         Insert: {
+          cheap_cost_high?: number | null
+          cheap_cost_low?: number | null
+          cheap_hours_high?: number | null
+          cheap_hours_low?: number | null
           created_at?: string
           estimate_notes?: string | null
           estimated_cost_high?: number | null
@@ -131,12 +143,20 @@ export type Database = {
           estimated_hours_low?: number | null
           estimated_value_added?: number | null
           estimated_value_added_pct?: number | null
+          fast_cost_high?: number | null
+          fast_cost_low?: number | null
+          fast_hours_high?: number | null
+          fast_hours_low?: number | null
           id?: string
           project_id: string
           spec?: Json
           user_id: string
         }
         Update: {
+          cheap_cost_high?: number | null
+          cheap_cost_low?: number | null
+          cheap_hours_high?: number | null
+          cheap_hours_low?: number | null
           created_at?: string
           estimate_notes?: string | null
           estimated_cost_high?: number | null
@@ -145,6 +165,10 @@ export type Database = {
           estimated_hours_low?: number | null
           estimated_value_added?: number | null
           estimated_value_added_pct?: number | null
+          fast_cost_high?: number | null
+          fast_cost_low?: number | null
+          fast_hours_high?: number | null
+          fast_hours_low?: number | null
           id?: string
           project_id?: string
           spec?: Json
@@ -288,6 +312,10 @@ export type Database = {
       }
       projects: {
         Row: {
+          cheap_cost_high: number | null
+          cheap_cost_low: number | null
+          cheap_hours_high: number | null
+          cheap_hours_low: number | null
           created_at: string
           description: string | null
           estimate_notes: string | null
@@ -299,6 +327,10 @@ export type Database = {
           estimated_hours_low: number | null
           estimated_value_added: number | null
           estimated_value_added_pct: number | null
+          fast_cost_high: number | null
+          fast_cost_low: number | null
+          fast_hours_high: number | null
+          fast_hours_low: number | null
           home_id: string
           id: string
           intake_state: Json | null
@@ -312,6 +344,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cheap_cost_high?: number | null
+          cheap_cost_low?: number | null
+          cheap_hours_high?: number | null
+          cheap_hours_low?: number | null
           created_at?: string
           description?: string | null
           estimate_notes?: string | null
@@ -323,6 +359,10 @@ export type Database = {
           estimated_hours_low?: number | null
           estimated_value_added?: number | null
           estimated_value_added_pct?: number | null
+          fast_cost_high?: number | null
+          fast_cost_low?: number | null
+          fast_hours_high?: number | null
+          fast_hours_low?: number | null
           home_id: string
           id?: string
           intake_state?: Json | null
@@ -336,6 +376,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cheap_cost_high?: number | null
+          cheap_cost_low?: number | null
+          cheap_hours_high?: number | null
+          cheap_hours_low?: number | null
           created_at?: string
           description?: string | null
           estimate_notes?: string | null
@@ -347,6 +391,10 @@ export type Database = {
           estimated_hours_low?: number | null
           estimated_value_added?: number | null
           estimated_value_added_pct?: number | null
+          fast_cost_high?: number | null
+          fast_cost_low?: number | null
+          fast_hours_high?: number | null
+          fast_hours_low?: number | null
           home_id?: string
           id?: string
           intake_state?: Json | null
