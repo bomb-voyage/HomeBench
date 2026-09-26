@@ -117,6 +117,21 @@ function ProjectDetailPage() {
     },
   });
 
+  // Projects estimated before the cheapest/fastest split only have the old combined range:
+  // re-estimate them once automatically so both method cards fill in.
+  const needsSplit =
+    !!project &&
+    project.estimated_cost_low != null &&
+    (project as Record<string, unknown>)["fast_cost_low"] == null &&
+    (project as Record<string, unknown>)["cheap_cost_low"] == null;
+  const [autoSplitTried, setAutoSplitTried] = useState(false);
+  useEffect(() => {
+    if (needsSplit && !autoSplitTried && !estimateMutation.isPending) {
+      setAutoSplitTried(true);
+      estimateMutation.mutate();
+    }
+  }, [needsSplit, autoSplitTried]);
+
   useEffect(() => {
     if (project) {
       setDraftTitle(project.title);
