@@ -122,8 +122,8 @@ function ProjectDetailPage() {
   const needsSplit =
     !!project &&
     project.estimated_cost_low != null &&
-    (project as Record<string, unknown>).fast_cost_low == null &&
-    (project as Record<string, unknown>).cheap_cost_low == null;
+    (project as Record<string, unknown>)["fast_cost_low"] == null &&
+    (project as Record<string, unknown>)["cheap_cost_low"] == null;
   const [autoSplitTried, setAutoSplitTried] = useState(false);
   useEffect(() => {
     if (needsSplit && !autoSplitTried && !estimateMutation.isPending) {
