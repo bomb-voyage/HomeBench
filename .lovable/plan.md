@@ -7,7 +7,7 @@ Each estimate gets split into two methods:
 
 Each method shows its own cost, labor hours and a narrow range. Value added stays one number (it's the same finished result).
 
-The top of the project page shows two side-by-side cards, "Cheapest" and "Fastest", each with cost and hours. In the work plan, each step shows hours for both methods, and the recommended tools are tagged "Used in fastest method".
+The top of the project page shows two side-by-side cards, "Cheapest" and "Fastest", each with cost and hours. The step-by-step work plan stays as it is now: one set of steps, with each step's tools labeled Required or Recommended.
 
 ## 2. "What if" editing of gathered details
 - The Gathered details list becomes editable: each item is a drop-down (when the AI knows the likely options, e.g. tile: porcelain / ceramic / vinyl / natural stone) or a text/number box. The room stays locked.
@@ -17,7 +17,7 @@ The top of the project page shows two side-by-side cards, "Cheapest" and "Fastes
 - Preview uses a faster, cheaper AI call; Finalize runs the full estimate so the work plan is regenerated properly.
 
 ## Technical details
-- Database: add `cheap_cost_low/high`, `cheap_hours_low/high`, `fast_cost_low/high`, `fast_hours_low/high` to `projects` and `project_estimates`; add `fast_hours_low/high` to `project_steps`; add `in_fast_method boolean` to `project_tools`. Existing combined columns kept for older projects (shown as a single estimate until re-estimated).
+- Database: add `cheap_cost_low/high`, `cheap_hours_low/high`, `fast_cost_low/high`, `fast_hours_low/high` to `projects` and `project_estimates`. Steps and tools are unchanged. Existing combined columns kept for older projects (shown as a single estimate until re-estimated).
 - Intake: AI also returns `spec_options` (per spec key, list of likely choices), stored in `projects.spec` metadata (`_options`) so the editor can render drop-downs.
 - Estimation prompt + Zod schema updated to return both methods; `generateEstimate` persists them.
 - New server function `previewEstimate` (flash model, costs/hours only, no writes) for the comparison; Finalize = `updateProject({ spec })` then `generateEstimate`.
