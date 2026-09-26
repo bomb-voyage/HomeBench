@@ -40,9 +40,26 @@ import {
   updateProject,
   deleteProject,
   generateEstimate,
+  previewEstimate,
   nextIntakeQuestion,
 } from "@/lib/projects.functions";
-import { PROJECT_STATUSES, PROJECT_SCOPE_TYPES, type IntakeMessage, type IntakeResponse } from "@/lib/projects-schema";
+import {
+  PROJECT_STATUSES,
+  PROJECT_SCOPE_TYPES,
+  type IntakeMessage,
+  type IntakeResponse,
+  type PreviewEstimateOutput,
+} from "@/lib/projects-schema";
+
+type N = number | null | undefined;
+function rangeText(low: N, high: N, fmt: (v: number) => string): string {
+  if (low == null || high == null) return "—";
+  return low === high ? fmt(low) : `${fmt(low)}–${fmt(high)}`;
+}
+function mid(low: N, high: N): number | null {
+  if (low == null || high == null) return null;
+  return (low + high) / 2;
+}
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
@@ -106,6 +123,49 @@ function ProjectDetailPage() {
       setDraftDescription(project.description ?? "");
     }
   }, [project?.title, project?.description]);
+
+  const [draftSpec, setDraftSpec] = useState<Record<string, string | number | boolean | null>>({});
+  const [preview, setPreview] = useState<PreviewEstimateOutput | null>(null);
+  const savedSpecJson = JSON.stringify(project?.spec ?? {});
+  useEffect(() => {
+    setDraftSpec(JSON.parse(savedSpecJson));
+    setPreview(null);
+  }, [savedSpecJson]);
+
+  const setDraftField = (key: string, value: string | number) => {
+    setDraftSpec((prev) => ({ ...prev, [key]: value }));
+    setPreview(null);
+  };
+  const discardDraft = () => {
+    setDraftSpec(JSON.parse(savedSpecJson));
+    setPreview(null);
+  };
+
+  const estimateArgs = (s: Record<string, string | number | boolean | null>) => ({
+    projectId,
+    homeId: project!.home_id,
+    roomId: project!.room_id,
+    scopeType: project!.scope_type as (typeof PROJECT_SCOPE_TYPES)[number],
+    title: project!.title,
+    spec: s,
+  });
+
+  const previewMutation = useMutation({
+    mutationFn: () => previewEstimate({ data: estimateArgs(draftSpec) }),
+    onSuccess: (result) => setPreview(result as PreviewEstimateOutput),
+  });
+
+  const finalizeMutation = useMutation({
+    mutationFn: async () => {
+      await updateProject({ data: { id: projectId, spec: draftSpec } });
+      return generateEstimate({ data: estimateArgs(draftSpec) });
+    },
+    onSuccess: () => {
+      setPreview(null);
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["homes", home?.id, "projects"] });
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: (values: { title?: string; description?: string | null; status?: string; scopeType?: string; roomId?: string | null; spec?: Record<string, unknown>; intakeState?: IntakeMessage[] }) =>
@@ -227,6 +287,9 @@ function ProjectDetailPage() {
   }
 
   const spec = (project.spec as Record<string, unknown>) ?? {};
+  const p = project as typeof project & Record<string, number | null>;
+  const specOptions = ((project as { spec_options?: unknown }).spec_options ?? {}) as Record<string, string[]>;
+  const isDirty = JSON.stringify(draftSpec) !== JSON.stringify(spec);
 
   return (
     <AppShell>
@@ -422,16 +485,67 @@ function ProjectDetailPage() {
                 />
               </div>
               {Object.keys(spec).length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-sm font-medium">Gathered details</p>
-                  <ul className="space-y-1 rounded bg-muted p-3 text-sm">
-                    {Object.entries(spec).map(([key, value]) => (
-                      <li key={key} className="flex justify-between gap-2">
-                        <span className="capitalize text-muted-foreground">{key.replace(/_/g, " ")}</span>
-                        <span>{String(value)}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {Object.keys(spec).map((key) => {
+                    const locked = key.toLowerCase() === "room";
+                    const value = draftSpec[key];
+                    const current = value == null ? "" : String(value);
+                    const opts = specOptions[key] ?? [];
+                    const choices = opts.includes(current) || !current ? opts : [current, ...opts];
+                    const changed = String(spec[key] ?? "") !== current;
+                    return (
+                      <div key={key} className="space-y-1">
+                        <Label className="text-xs capitalize text-muted-foreground">
+                          {key.replace(/_/g, " ")}
+                          {changed && <span className="ml-1 text-primary">• changed</span>}
+                        </Label>
+                        {locked ? (
+                          <p className="text-sm">{current}</p>
+                        ) : choices.length > 1 ? (
+                          <Select value={current} onValueChange={(v) => setDraftField(key, v)}>
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {choices.map((c) => (
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            className="h-8 text-sm"
+                            value={current}
+                            onChange={(e) =>
+                              setDraftField(
+                                key,
+                                typeof spec[key] === "number" && e.target.value !== "" && !Number.isNaN(Number(e.target.value))
+                                  ? Number(e.target.value)
+                                  : e.target.value,
+                              )
+                            }
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                  {isDirty && (
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => previewMutation.mutate()}
+                      disabled={previewMutation.isPending}
+                    >
+                      {previewMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                      Preview changes
+                    </Button>
+                  )}
+                  {previewMutation.isError && (
+                    <p className="text-xs text-destructive">Couldn't preview those changes. Try again.</p>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -482,6 +596,77 @@ function ProjectDetailPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function MethodCard({
+  icon,
+  label,
+  hint,
+  cost,
+  hours,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint: string;
+  cost: string;
+  hours: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-start gap-4 py-6">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          {icon}
+        </div>
+        <div>
+          <p className="label-caps">{label}</p>
+          <p className="stat-figure mt-1 text-xl font-semibold">{cost}</p>
+          <p className="text-sm text-muted-foreground">{hours === "—" ? "—" : `${hours} labor`}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DeltaBlock({
+  label,
+  costNow,
+  costNew,
+  hoursNow,
+  hoursNew,
+  costRange,
+  hoursRange,
+}: {
+  label: string;
+  costNow: number | null;
+  costNew: number | null;
+  hoursNow: number | null;
+  hoursNew: number | null;
+  costRange: string;
+  hoursRange: string;
+}) {
+  const delta = (now: number | null, next: number | null, fmt: (v: number) => string) => {
+    if (now == null || next == null) return null;
+    const d = next - now;
+    if (Math.abs(d) < 0.5) return <span className="text-muted-foreground">no change</span>;
+    return (
+      <span className={d > 0 ? "text-destructive" : "text-success"}>
+        {d > 0 ? "+" : "−"}
+        {fmt(Math.abs(d))}
+      </span>
+    );
+  };
+  return (
+    <div className="rounded border border-border p-3 text-sm">
+      <p className="label-caps">{label}</p>
+      <p className="mt-1">
+        Cost: {delta(costNow, costNew, formatCurrency)} <span className="text-muted-foreground">→ {costRange}</span>
+      </p>
+      <p>
+        Hours: {delta(hoursNow, hoursNew, formatHours)} <span className="text-muted-foreground">→ {hoursRange}</span>
+      </p>
+    </div>
   );
 }
 
