@@ -363,23 +363,19 @@ function ProjectDetailPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <EstimateCard
+        <MethodCard
           icon={<DollarSign className="size-5" />}
-          label="Estimated cost"
-          value={
-            project.estimated_cost_low != null && project.estimated_cost_high != null
-              ? `${formatCurrency(project.estimated_cost_low)}–${formatCurrency(project.estimated_cost_high)}`
-              : "—"
-          }
+          label="Cheapest method"
+          hint="Required tools only"
+          cost={rangeText(p.cheap_cost_low ?? project.estimated_cost_low, p.cheap_cost_high ?? project.estimated_cost_high, formatCurrency)}
+          hours={rangeText(p.cheap_hours_low ?? project.estimated_hours_low, p.cheap_hours_high ?? project.estimated_hours_high, formatHours)}
         />
-        <EstimateCard
+        <MethodCard
           icon={<Clock className="size-5" />}
-          label="DIY labor hours"
-          value={
-            project.estimated_hours_low != null && project.estimated_hours_high != null
-              ? `${formatHours(project.estimated_hours_low)}–${formatHours(project.estimated_hours_high)}`
-              : "—"
-          }
+          label="Fastest method"
+          hint="Adds recommended time-savers"
+          cost={rangeText(p.fast_cost_low, p.fast_cost_high, formatCurrency)}
+          hours={rangeText(p.fast_hours_low, p.fast_hours_high, formatHours)}
         />
         <EstimateCard
           icon={<TrendingUp className="size-5" />}
@@ -391,6 +387,46 @@ function ProjectDetailPage() {
           }
         />
       </div>
+
+      {preview && (
+        <Card className="mt-4 border-primary/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">If you make these changes</CardTitle>
+            {preview.summary && <CardDescription>{preview.summary}</CardDescription>}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DeltaBlock
+                label="Cheapest method"
+                costNow={mid(p.cheap_cost_low ?? project.estimated_cost_low, p.cheap_cost_high ?? project.estimated_cost_high)}
+                costNew={mid(preview.cheap_cost_low, preview.cheap_cost_high)}
+                hoursNow={mid(p.cheap_hours_low ?? project.estimated_hours_low, p.cheap_hours_high ?? project.estimated_hours_high)}
+                hoursNew={mid(preview.cheap_hours_low, preview.cheap_hours_high)}
+                costRange={rangeText(preview.cheap_cost_low, preview.cheap_cost_high, formatCurrency)}
+                hoursRange={rangeText(preview.cheap_hours_low, preview.cheap_hours_high, formatHours)}
+              />
+              <DeltaBlock
+                label="Fastest method"
+                costNow={mid(p.fast_cost_low, p.fast_cost_high)}
+                costNew={mid(preview.fast_cost_low, preview.fast_cost_high)}
+                hoursNow={mid(p.fast_hours_low, p.fast_hours_high)}
+                hoursNew={mid(preview.fast_hours_low, preview.fast_hours_high)}
+                costRange={rangeText(preview.fast_cost_low, preview.fast_cost_high, formatCurrency)}
+                hoursRange={rangeText(preview.fast_hours_low, preview.fast_hours_high, formatHours)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => finalizeMutation.mutate()} disabled={finalizeMutation.isPending}>
+                {finalizeMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                Finalize changes
+              </Button>
+              <Button variant="ghost" onClick={discardDraft} disabled={finalizeMutation.isPending}>
+                Discard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="space-y-6">
