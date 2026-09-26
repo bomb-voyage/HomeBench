@@ -3,10 +3,12 @@ import { createLovableAiGatewayProvider } from "./ai-gateway";
 import {
   intakeResponseSchema,
   projectEstimateSchema,
+  previewEstimateSchema,
   type NextQuestionInput,
   type GenerateEstimateInput,
   type IntakeResponse,
   type ProjectEstimateOutput,
+  type PreviewEstimateOutput,
 } from "./projects-schema";
 
 const INTAKE_MODEL = "google/gemini-3.7-flash";
@@ -74,13 +76,18 @@ ${Object.entries(input.spec)
 
 Return JSON matching this schema exactly:
 {
-  "estimated_cost_low": number | null,     // total material cost low end in USD
-  "estimated_cost_high": number | null,    // total material cost high end in USD
-  "estimated_hours_low": number | null,    // total DIY labor hours low end
-  "estimated_hours_high": number | null,   // total DIY labor hours high end
+  "cheap_cost_low": number | null,   // CHEAPEST method: materials + required tools only (buy or rent, whichever is cheaper; owned tools $0), USD
+  "cheap_cost_high": number | null,
+  "cheap_hours_low": number | null,  // CHEAPEST method DIY labor hours
+  "cheap_hours_high": number | null,
+  "fast_cost_low": number | null,    // FASTEST method: cheapest method plus every recommended time-saving tool (buy or rent, whichever is cheaper for this job), USD
+  "fast_cost_high": number | null,
+  "fast_hours_low": number | null,   // FASTEST method DIY labor hours (cheap hours minus hours saved)
+  "fast_hours_high": number | null,
   "estimated_value_added": number | null,  // estimated dollar increase to home value
   "estimated_value_added_pct": number | null, // percentage of home value, e.g. 0.03 = 3%
   "estimate_notes": string | null,         // one paragraph summary of assumptions and caveats
+  "spec_options": { [specKey: string]: string[] }, // for each spec key with a discrete choice (material, type, finish, height...), 3-6 realistic alternatives INCLUDING the current value. Omit free-form or dimension keys.
   "steps": [
     {
       "sort_order": number,
@@ -116,7 +123,7 @@ Guidelines:
 - Value-added should be realistic: modest projects often add 50-100% of cost or less; high-impact kitchen/bath work may add more. Use percent of home value where helpful.
 - For each step, recommend 0-3 helpful tools. Required tools are necessary to complete the step; recommended tools are optional but save meaningful time/effort. Provide plausible buy and rental search links as URLs to a major retailer or rental search (e.g. The Home Depot, Lowe's, Sunbelt). Set estimated prices to null when truly unknown.
 - If a tool would save hours, set hours_saved to a positive number and explain in rationale.
-- Keep estimates in a reasonable range. Return "estimate_notes" explaining assumptions.`;
+- Keep each range TIGHT (high end no more than ~25% above low end). Each method is one specific approach, not a blend. Return "estimate_notes" explaining assumptions.`;
 }
 
 function extractJsonBlock(text: string): string {
@@ -204,7 +211,47 @@ export async function generateProjectEstimate(
   });
 
   const parsed = JSON.parse(extractJsonBlock(text));
-  return projectEstimateSchema.parse(parsed);
+  const result = projectEstimateSchema.parse(parsed);
+  // Keep legacy combined fields populated: cost from cheapest, hours from fastest..cheapest
+  result.estimated_cost_low = result.cheap_cost_low ?? result.estimated_cost_low ?? null;
+  result.estimated_cost_high = result.fast_cost_high ?? result.estimated_cost_high ?? null;
+  result.estimated_hours_low = result.fast_hours_low ?? result.estimated_hours_low ?? null;
+  result.estimated_hours_high = result.cheap_hours_high ?? result.estimated_hours_high ?? null;
+  return result;
+}
+
+export async function previewProjectEstimate(
+  input: GenerateEstimateInput,
+  context: { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null },
+  apiKey: string,
+): Promise<PreviewEstimateOutput> {
+  const gateway = createLovableAiGatewayProvider(apiKey, undefined, { structuredOutputs: false });
+  const model = gateway(INTAKE_MODEL);
+  const system = `You are Homebench, an expert residential cost estimator for US DIY homeowners.
+
+${homeContextPrompt({ ...input, ...context })}
+
+## Project spec
+Title: ${input.title}
+${Object.entries(input.spec).map(([k, v]) => `- ${k}: ${v}`).join("\n")}
+
+Estimate two methods with TIGHT ranges (high no more than ~25% above low):
+- CHEAPEST: materials + required tools only (owned tools $0).
+- FASTEST: cheapest plus recommended time-saving tools (buy or rent, whichever is cheaper).
+
+Return ONLY JSON:
+{
+  "cheap_cost_low": number, "cheap_cost_high": number, "cheap_hours_low": number, "cheap_hours_high": number,
+  "fast_cost_low": number, "fast_cost_high": number, "fast_hours_low": number, "fast_hours_high": number,
+  "estimated_value_added": number | null,
+  "summary": string // one sentence on what drives the numbers
+}`;
+  const { text } = await generateText({
+    model,
+    system,
+    messages: [{ role: "user", content: "Estimate this project." }],
+  });
+  return previewEstimateSchema.parse(JSON.parse(extractJsonBlock(text)));
 }
 
 export function buildSearchLinks(toolName: string): { buy: string; rent: string } {

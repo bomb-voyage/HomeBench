@@ -44,19 +44,40 @@ export const stepEstimateSchema = z.object({
 
 export type StepEstimate = z.infer<typeof stepEstimateSchema>;
 
+const methodFields = {
+  cheap_cost_low: z.number().nullable().optional(),
+  cheap_cost_high: z.number().nullable().optional(),
+  cheap_hours_low: z.number().nullable().optional(),
+  cheap_hours_high: z.number().nullable().optional(),
+  fast_cost_low: z.number().nullable().optional(),
+  fast_cost_high: z.number().nullable().optional(),
+  fast_hours_low: z.number().nullable().optional(),
+  fast_hours_high: z.number().nullable().optional(),
+};
+
 export const projectEstimateSchema = z.object({
   estimated_cost_low: z.number().nullable().optional(),
   estimated_cost_high: z.number().nullable().optional(),
   estimated_hours_low: z.number().nullable().optional(),
   estimated_hours_high: z.number().nullable().optional(),
+  ...methodFields,
   estimated_value_added: z.number().nullable().optional(),
   estimated_value_added_pct: z.number().nullable().optional(),
   estimate_notes: z.string().nullable().optional(),
+  spec_options: z.record(z.array(z.string())).nullable().optional(),
   steps: z.array(stepEstimateSchema).default([]),
   tools: z.array(toolEstimateSchema).default([]),
 });
 
 export type ProjectEstimateOutput = z.infer<typeof projectEstimateSchema>;
+
+export const previewEstimateSchema = z.object({
+  ...methodFields,
+  estimated_value_added: z.number().nullable().optional(),
+  summary: z.string().nullable().optional(),
+});
+
+export type PreviewEstimateOutput = z.infer<typeof previewEstimateSchema>;
 
 export const intakeResponseSchema = z.object({
   done: z.boolean().default(false),
