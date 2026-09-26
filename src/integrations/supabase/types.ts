@@ -338,6 +338,7 @@ export type Database = {
           room_id: string | null
           scope_type: string
           spec: Json | null
+          spec_options: Json
           status: string
           title: string
           updated_at: string
@@ -370,6 +371,7 @@ export type Database = {
           room_id?: string | null
           scope_type?: string
           spec?: Json | null
+          spec_options?: Json
           status?: string
           title: string
           updated_at?: string
@@ -402,6 +404,7 @@ export type Database = {
           room_id?: string | null
           scope_type?: string
           spec?: Json | null
+          spec_options?: Json
           status?: string
           title?: string
           updated_at?: string

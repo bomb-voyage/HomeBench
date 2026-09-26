@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN spec_options jsonb NOT NULL DEFAULT '{}'::jsonb;
