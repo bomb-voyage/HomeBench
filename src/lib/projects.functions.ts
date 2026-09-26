@@ -6,6 +6,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   askNextIntakeQuestion,
   generateProjectEstimate,
+  previewProjectEstimate,
   buildSearchLinks,
 } from "./projects.server";
 import {
@@ -125,6 +126,24 @@ export const nextIntakeQuestion = createServerFn({ method: "POST" })
     return askNextIntakeQuestion(data, apiKey);
   });
 
+async function loadEstimateContext(
+  supabase: SupabaseClient<Database>,
+  homeId: string,
+  roomId: string | null | undefined,
+) {
+  const [{ data: home }, { data: room }] = await Promise.all([
+    supabase.from("homes").select("square_feet, estimated_value").eq("id", homeId).single(),
+    roomId
+      ? supabase.from("rooms").select("name, room_type").eq("id", roomId).single()
+      : Promise.resolve({ data: null }),
+  ]);
+  return {
+    roomName: room?.name ?? null,
+    roomType: room?.room_type ?? null,
+    homeSquareFeet: home?.square_feet ?? null,
+  };
+}
+
 export const generateEstimate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => generateEstimateInputSchema.parse(data))
@@ -133,28 +152,22 @@ export const generateEstimate = createServerFn({ method: "POST" })
     if (!apiKey) {
       throw new Error("AI gateway is not configured. Please set LOVABLE_API_KEY.");
     }
-
-    // Fetch home and optional room details for context
-    const [{ data: home }, { data: room }] = await Promise.all([
-      context.supabase.from("homes").select("square_feet, estimated_value").eq("id", data.homeId).single(),
-      data.roomId
-        ? context.supabase.from("rooms").select("name, room_type").eq("id", data.roomId).single()
-        : Promise.resolve({ data: null }),
-    ]);
-
-    const estimate = await generateProjectEstimate(
-      data,
-      {
-        roomName: room?.name ?? null,
-        roomType: room?.room_type ?? null,
-        homeSquareFeet: home?.square_feet ?? null,
-      },
-      apiKey,
-    );
-
+    const ctx = await loadEstimateContext(context.supabase, data.homeId, data.roomId);
+    const estimate = await generateProjectEstimate(data, ctx, apiKey);
     await saveEstimateInternal(context.supabase, context.userId, data.projectId, data.spec, estimate);
-
     return estimate;
+  });
+
+export const previewEstimate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => generateEstimateInputSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) {
+      throw new Error("AI gateway is not configured. Please set LOVABLE_API_KEY.");
+    }
+    const ctx = await loadEstimateContext(context.supabase, data.homeId, data.roomId);
+    return previewProjectEstimate(data, ctx, apiKey);
   });
 
 async function saveEstimateInternal(
@@ -164,6 +177,16 @@ async function saveEstimateInternal(
   spec: Record<string, unknown>,
   estimate: ProjectEstimateOutput,
 ) {
+  const methods = {
+    cheap_cost_low: estimate.cheap_cost_low ?? null,
+    cheap_cost_high: estimate.cheap_cost_high ?? null,
+    cheap_hours_low: estimate.cheap_hours_low ?? null,
+    cheap_hours_high: estimate.cheap_hours_high ?? null,
+    fast_cost_low: estimate.fast_cost_low ?? null,
+    fast_cost_high: estimate.fast_cost_high ?? null,
+    fast_hours_low: estimate.fast_hours_low ?? null,
+    fast_hours_high: estimate.fast_hours_high ?? null,
+  };
   // Snapshot estimate
   const { error: snapshotError } = await supabase.from("project_estimates").insert({
     user_id: userId,
@@ -173,6 +196,7 @@ async function saveEstimateInternal(
     estimated_cost_high: estimate.estimated_cost_high ?? null,
     estimated_hours_low: estimate.estimated_hours_low ?? null,
     estimated_hours_high: estimate.estimated_hours_high ?? null,
+    ...methods,
     estimated_value_added: estimate.estimated_value_added ?? null,
     estimated_value_added_pct: estimate.estimated_value_added_pct ?? null,
     estimate_notes: estimate.estimate_notes ?? null,
@@ -187,12 +211,14 @@ async function saveEstimateInternal(
       estimated_cost_high: estimate.estimated_cost_high ?? null,
       estimated_hours_low: estimate.estimated_hours_low ?? null,
       estimated_hours_high: estimate.estimated_hours_high ?? null,
+      ...methods,
       estimated_value_added: estimate.estimated_value_added ?? null,
       estimated_value_added_pct: estimate.estimated_value_added_pct ?? null,
       estimate_notes: estimate.estimate_notes ?? null,
       estimated_at: new Date().toISOString(),
       estimate_status: "estimated",
       spec,
+      ...(estimate.spec_options ? { spec_options: estimate.spec_options } : {}),
     } as any)
     .eq("id", projectId)
     .eq("user_id", userId);
