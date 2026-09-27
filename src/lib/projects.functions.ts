@@ -7,6 +7,7 @@ import {
   askNextIntakeQuestion,
   generateProjectEstimate,
   previewProjectEstimate,
+  validateProjectSpecOption,
   buildSearchLinks,
 } from "./projects.server";
 import {
@@ -16,6 +17,7 @@ import {
   nextQuestionInputSchema,
   projectEstimateSchema,
   updateProjectInputSchema,
+  validateSpecOptionInputSchema,
   type ProjectEstimateOutput,
 } from "./projects-schema";
 
@@ -184,6 +186,33 @@ export const previewEstimate = createServerFn({ method: "POST" })
         }
       : null;
     return previewProjectEstimate(data, ctx, apiKey, baseline);
+  });
+
+export const validateSpecOption = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => validateSpecOptionInputSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) {
+      throw new Error("AI gateway is not configured. Please set LOVABLE_API_KEY.");
+    }
+    const { data: project, error } = await context.supabase
+      .from("projects")
+      .select("title, spec")
+      .eq("id", data.projectId)
+      .eq("user_id", context.userId)
+      .single();
+    if (error || !project) throw new Error(error?.message ?? "Project not found");
+
+    return validateProjectSpecOption(
+      {
+        title: project.title,
+        key: data.key,
+        value: data.value,
+        spec: (project.spec ?? {}) as Record<string, unknown>,
+      },
+      apiKey,
+    );
   });
 
 async function saveEstimateInternal(

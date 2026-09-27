@@ -41,6 +41,7 @@ import {
   deleteProject,
   generateEstimate,
   previewEstimate,
+  validateSpecOption,
   nextIntakeQuestion,
 } from "@/lib/projects.functions";
 import {
@@ -49,7 +50,10 @@ import {
   type IntakeMessage,
   type IntakeResponse,
   type PreviewEstimateOutput,
+  type ValidateSpecOptionResult,
 } from "@/lib/projects-schema";
+
+const OTHER_OPTION = "__other__";
 
 type N = number | null | undefined;
 function rangeText(low: N, high: N, fmt: (v: number) => string): string {
@@ -141,10 +145,16 @@ function ProjectDetailPage() {
 
   const [draftSpec, setDraftSpec] = useState<Record<string, string | number | boolean | null>>({});
   const [preview, setPreview] = useState<PreviewEstimateOutput | null>(null);
+  const [customFields, setCustomFields] = useState<Record<string, boolean>>({});
+  const [customInputs, setCustomInputs] = useState<Record<string, string>>({});
+  const [customResults, setCustomResults] = useState<Record<string, ValidateSpecOptionResult>>({});
   const savedSpecJson = JSON.stringify(project?.spec ?? {});
   useEffect(() => {
     setDraftSpec(JSON.parse(savedSpecJson));
     setPreview(null);
+    setCustomFields({});
+    setCustomInputs({});
+    setCustomResults({});
   }, [savedSpecJson]);
 
   const setDraftField = (key: string, value: string | number) => {
@@ -168,6 +178,19 @@ function ProjectDetailPage() {
   const previewMutation = useMutation({
     mutationFn: () => previewEstimate({ data: estimateArgs(draftSpec) }),
     onSuccess: (result) => setPreview(result as PreviewEstimateOutput),
+  });
+
+  const validateOptionMutation = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: string }) =>
+      validateSpecOption({ data: { projectId, key, value } }),
+    onSuccess: (result, variables) => {
+      const checked = result as ValidateSpecOptionResult;
+      setCustomResults((prev) => ({ ...prev, [variables.key]: checked }));
+      if (checked.valid && checked.normalizedValue) {
+        setDraftField(variables.key, checked.normalizedValue);
+        setCustomFields((prev) => ({ ...prev, [variables.key]: false }));
+      }
+    },
   });
 
   const finalizeMutation = useMutation({
@@ -566,18 +589,108 @@ function ProjectDetailPage() {
                         {locked ? (
                           <p className="text-sm">{current}</p>
                         ) : choices.length > 1 ? (
-                          <Select value={current} onValueChange={(v) => setDraftField(key, v)}>
-                            <SelectTrigger className="h-8 text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {choices.map((c) => (
-                                <SelectItem key={c} value={c}>
-                                  {c}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="space-y-2">
+                            <Select
+                              value={customFields[key] ? OTHER_OPTION : current}
+                              onValueChange={(v) => {
+                                if (v === OTHER_OPTION) {
+                                  setCustomFields((prev) => ({ ...prev, [key]: true }));
+                                  setCustomInputs((prev) => ({ ...prev, [key]: "" }));
+                                  setCustomResults((prev) => {
+                                    const next = { ...prev };
+                                    delete next[key];
+                                    return next;
+                                  });
+                                  return;
+                                }
+                                setCustomFields((prev) => ({ ...prev, [key]: false }));
+                                setDraftField(key, v);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {choices.map((c) => (
+                                  <SelectItem key={c} value={c}>
+                                    {c}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value={OTHER_OPTION}>Other…</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {customFields[key] && (
+                              <div className="space-y-2 rounded border border-border p-3">
+                                <div className="flex gap-2">
+                                  <Input
+                                    className="h-8 text-sm"
+                                    value={customInputs[key] ?? ""}
+                                    maxLength={80}
+                                    autoComplete="off"
+                                    placeholder={`Enter another ${key.replace(/_/g, " ")}`}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      setCustomInputs((prev) => ({ ...prev, [key]: value }));
+                                      setCustomResults((prev) => {
+                                        const next = { ...prev };
+                                        delete next[key];
+                                        return next;
+                                      });
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        const value = (customInputs[key] ?? "").trim();
+                                        if (value.length >= 2 && !validateOptionMutation.isPending) {
+                                          validateOptionMutation.mutate({ key, value });
+                                        }
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={(customInputs[key] ?? "").trim().length < 2 || validateOptionMutation.isPending}
+                                    onClick={() => validateOptionMutation.mutate({ key, value: (customInputs[key] ?? "").trim() })}
+                                  >
+                                    {validateOptionMutation.isPending && validateOptionMutation.variables?.key === key ? (
+                                      <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                      "Check"
+                                    )}
+                                  </Button>
+                                </div>
+                                {customResults[key] && !customResults[key].valid && (
+                                  <div className="space-y-2">
+                                    <p className="text-xs text-destructive">{customResults[key].message}</p>
+                                    {customResults[key].suggestions.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {customResults[key].suggestions.map((suggestion) => (
+                                          <Button
+                                            key={suggestion}
+                                            type="button"
+                                            size="sm"
+                                            variant="secondary"
+                                            className="h-7 text-xs"
+                                            onClick={() => {
+                                              setDraftField(key, suggestion);
+                                              setCustomFields((prev) => ({ ...prev, [key]: false }));
+                                            }}
+                                          >
+                                            {suggestion}
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {validateOptionMutation.isError && validateOptionMutation.variables?.key === key && (
+                                  <p className="text-xs text-destructive">Couldn't check that option. Try again.</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <Input
                             className="h-8 text-sm"

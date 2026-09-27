@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Validate free-form project specification options in an authenticated server function before adding them to estimate inputs, so unrelated values cannot corrupt estimates.

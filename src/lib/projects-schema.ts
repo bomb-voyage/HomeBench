@@ -79,6 +79,21 @@ export const previewEstimateSchema = z.object({
 
 export type PreviewEstimateOutput = z.infer<typeof previewEstimateSchema>;
 
+export const validateSpecOptionInputSchema = z.object({
+  projectId: z.string().uuid(),
+  key: z.string().trim().min(1).max(80),
+  value: z.string().trim().min(2).max(80),
+});
+
+export const validateSpecOptionResultSchema = z.object({
+  valid: z.boolean(),
+  normalizedValue: z.string().trim().min(1).max(80).nullable(),
+  suggestions: z.array(z.string().trim().min(1).max(80)).max(5).default([]),
+  message: z.string().trim().min(1).max(240),
+});
+
+export type ValidateSpecOptionResult = z.infer<typeof validateSpecOptionResultSchema>;
+
 export const intakeResponseSchema = z.object({
   done: z.boolean().default(false),
   question: z.string().nullable().optional(),
