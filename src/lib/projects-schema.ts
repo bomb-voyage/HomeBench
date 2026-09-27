@@ -108,7 +108,14 @@ export const generateEstimateInputSchema = z.object({
   title: z.string().min(1),
   spec: projectSpecSchema,
   homeValue: z.number().nullable().optional(),
+  // Totals from a preview the user accepted; finalize must stay consistent with them.
+  targetTotals: z.object(methodFields).nullable().optional(),
 });
+
+export type EstimateBaseline = {
+  spec: Record<string, unknown>;
+  totals: Record<string, number | null>;
+};
 
 export type GenerateEstimateInput = z.infer<typeof generateEstimateInputSchema>;
 

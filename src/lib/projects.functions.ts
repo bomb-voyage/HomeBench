@@ -167,7 +167,23 @@ export const previewEstimate = createServerFn({ method: "POST" })
       throw new Error("AI gateway is not configured. Please set LOVABLE_API_KEY.");
     }
     const ctx = await loadEstimateContext(context.supabase, data.homeId, data.roomId);
-    return previewProjectEstimate(data, ctx, apiKey);
+    const { data: saved } = await context.supabase
+      .from("projects")
+      .select("spec, cheap_cost_low, cheap_cost_high, cheap_hours_low, cheap_hours_high, fast_cost_low, fast_cost_high, fast_hours_low, fast_hours_high")
+      .eq("id", data.projectId)
+      .single();
+    const baseline = saved && saved.cheap_cost_low != null
+      ? {
+          spec: (saved.spec ?? {}) as Record<string, unknown>,
+          totals: {
+            cheap_cost_low: saved.cheap_cost_low, cheap_cost_high: saved.cheap_cost_high,
+            cheap_hours_low: saved.cheap_hours_low, cheap_hours_high: saved.cheap_hours_high,
+            fast_cost_low: saved.fast_cost_low, fast_cost_high: saved.fast_cost_high,
+            fast_hours_low: saved.fast_hours_low, fast_hours_high: saved.fast_hours_high,
+          },
+        }
+      : null;
+    return previewProjectEstimate(data, ctx, apiKey, baseline);
   });
 
 async function saveEstimateInternal(
