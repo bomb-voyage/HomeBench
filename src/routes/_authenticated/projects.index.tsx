@@ -12,8 +12,6 @@ import {
   projectsQuery,
   formatCurrency,
   formatHours,
-  formatPercent,
-  statusLabel,
   estimateStatusLabel,
 } from "@/lib/projects-data";
 
@@ -118,9 +116,9 @@ function ProjectsPage() {
                   </div>
                   <div>
                     <p className="label-caps">Value</p>
-                    <p className="stat-figure mt-1">
-                      {project.estimated_value_added_pct != null
-                        ? formatPercent(project.estimated_value_added_pct)
+                    <p className="stat-figure mt-1 text-success">
+                      {project.estimated_value_added != null
+                        ? `+${formatCurrency(project.estimated_value_added)}`
                         : "—"}
                     </p>
                   </div>

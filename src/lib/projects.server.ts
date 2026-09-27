@@ -4,12 +4,14 @@ import {
   intakeResponseSchema,
   projectEstimateSchema,
   previewEstimateSchema,
+  validateSpecOptionResultSchema,
   type NextQuestionInput,
   type GenerateEstimateInput,
   type IntakeResponse,
   type ProjectEstimateOutput,
   type PreviewEstimateOutput,
   type EstimateBaseline,
+  type ValidateSpecOptionResult,
 } from "./projects-schema";
 
 const INTAKE_MODEL = "google/gemini-3.7-flash";
@@ -273,6 +275,48 @@ Return ONLY JSON:
     messages: [{ role: "user", content: "Estimate this project." }],
   });
   return previewEstimateSchema.parse(JSON.parse(extractJsonBlock(text)));
+}
+
+export async function validateProjectSpecOption(
+  input: {
+    title: string;
+    key: string;
+    value: string;
+    spec: Record<string, unknown>;
+  },
+  apiKey: string,
+): Promise<ValidateSpecOptionResult> {
+  const gateway = createLovableAiGatewayProvider(apiKey, undefined, { structuredOutputs: false });
+  const model = gateway(INTAKE_MODEL);
+  const system = `You validate one proposed option for a US residential DIY project.
+
+Decide whether the proposed value is a real, practical value for the named project detail and can be used in a cost and labor estimate. Correct spelling and normalize common trade names. Reject unrelated, unsafe, impossible, or too-vague values. Never add a unit unless the detail clearly requires one.
+
+If valid, return a concise normalizedValue and up to 3 closely related alternatives. If invalid, normalizedValue must be null and return 3-5 practical alternatives that fit this exact project and detail.
+
+Return ONLY JSON:
+{
+  "valid": boolean,
+  "normalizedValue": string | null,
+  "suggestions": string[],
+  "message": string
+}`;
+  const { text } = await generateText({
+    model,
+    system,
+    messages: [
+      {
+        role: "user",
+        content: JSON.stringify({
+          project: input.title,
+          currentProjectDetails: input.spec,
+          detail: input.key,
+          proposedValue: input.value,
+        }),
+      },
+    ],
+  });
+  return validateSpecOptionResultSchema.parse(JSON.parse(extractJsonBlock(text)));
 }
 
 export function buildSearchLinks(toolName: string): { buy: string; rent: string } {
