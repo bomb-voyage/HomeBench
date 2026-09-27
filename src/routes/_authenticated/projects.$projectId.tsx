@@ -416,7 +416,7 @@ function ProjectDetailPage() {
         <MethodCard
           icon={<DollarSign className="size-5" />}
           label="Cheapest method"
-          hint="Required tools only"
+          hint="Your tools + required tools"
           cost={rangeText(p.cheap_cost_low ?? project.estimated_cost_low, p.cheap_cost_high ?? project.estimated_cost_high, formatCurrency)}
           hours={rangeText(p.cheap_hours_low ?? project.estimated_hours_low, p.cheap_hours_high ?? project.estimated_hours_high, formatHours)}
         />
@@ -730,7 +730,7 @@ function ProjectDetailPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Tool list</CardTitle>
-              <CardDescription>Required and recommended tools</CardDescription>
+              <CardDescription>Owned, required and recommended tools</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {uniqueTools.length === 0 ? (
@@ -888,20 +888,21 @@ function StepTools({ tools }: { tools: Array<{
       {tools.map((tool) => (
         <div key={tool.id} className="rounded border border-border bg-card p-2 text-sm">
           <div className="flex items-center gap-2">
-            {tool.role === "required" ? (
+            {tool.already_owned ? (
+              <Badge variant="outline" className="border-success text-[10px] text-success">Owned</Badge>
+            ) : tool.role === "required" ? (
               <Badge variant="default" className="text-[10px]">Required</Badge>
             ) : (
               <Badge variant="secondary" className="text-[10px]">Recommended</Badge>
             )}
             <span className="font-medium">{tool.tool_name}</span>
-            {tool.already_owned && <CheckCircle2 className="size-3 text-success" />}
           </div>
           {tool.rationale && <p className="mt-1 text-xs text-muted-foreground">{tool.rationale}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
-            {tool.estimated_price != null && (
+            {!tool.already_owned && tool.estimated_price != null && (
               <span>Buy ~{formatCurrency(tool.estimated_price)}</span>
             )}
-            {tool.rental_price_per_day != null && (
+            {!tool.already_owned && tool.rental_price_per_day != null && (
               <span>Rent ~{formatCurrency(tool.rental_price_per_day)}/day</span>
             )}
             {tool.hours_saved != null && tool.hours_saved > 0 && (
@@ -950,14 +951,19 @@ function ToolRow({ tool }: { tool: {
     <div className="flex flex-col gap-1 rounded border border-border p-3 text-sm">
       <div className="flex items-center justify-between gap-2">
         <span className="font-medium">{tool.tool_name}</span>
-        <Badge variant={tool.role === "required" ? "default" : "secondary"} className="text-[10px]">
-          {tool.role === "required" ? "Required" : "Recommended"}
-        </Badge>
+        {tool.already_owned ? (
+          <Badge variant="outline" className="border-success text-[10px] text-success">Owned</Badge>
+        ) : (
+          <Badge variant={tool.role === "required" ? "default" : "secondary"} className="text-[10px]">
+            {tool.role === "required" ? "Required" : "Recommended"}
+          </Badge>
+        )}
       </div>
       {tool.rationale && <p className="text-xs text-muted-foreground">{tool.rationale}</p>}
       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
-        {tool.estimated_price != null && <span>Buy ~{formatCurrency(tool.estimated_price)}</span>}
-        {tool.rental_price_per_day != null && <span>Rent ~{formatCurrency(tool.rental_price_per_day)}/day</span>}
+        {tool.already_owned && <span className="text-success">In your toolkit · $0</span>}
+        {!tool.already_owned && tool.estimated_price != null && <span>Buy ~{formatCurrency(tool.estimated_price)}</span>}
+        {!tool.already_owned && tool.rental_price_per_day != null && <span>Rent ~{formatCurrency(tool.rental_price_per_day)}/day</span>}
         {tool.hours_saved != null && tool.hours_saved > 0 && (
           <span className="text-success">Saves {formatHours(tool.hours_saved)}</span>
         )}
