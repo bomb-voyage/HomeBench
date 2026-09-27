@@ -173,7 +173,19 @@ function ProjectDetailPage() {
   const finalizeMutation = useMutation({
     mutationFn: async () => {
       await updateProject({ data: { id: projectId, spec: draftSpec } });
-      return generateEstimate({ data: estimateArgs(draftSpec) });
+      const targetTotals = preview
+        ? {
+            cheap_cost_low: preview.cheap_cost_low ?? null,
+            cheap_cost_high: preview.cheap_cost_high ?? null,
+            cheap_hours_low: preview.cheap_hours_low ?? null,
+            cheap_hours_high: preview.cheap_hours_high ?? null,
+            fast_cost_low: preview.fast_cost_low ?? null,
+            fast_cost_high: preview.fast_cost_high ?? null,
+            fast_hours_low: preview.fast_hours_low ?? null,
+            fast_hours_high: preview.fast_hours_high ?? null,
+          }
+        : null;
+      return generateEstimate({ data: { ...estimateArgs(draftSpec), targetTotals } });
     },
     onSuccess: () => {
       setPreview(null);

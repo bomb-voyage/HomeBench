@@ -9,6 +9,7 @@ import {
   type IntakeResponse,
   type ProjectEstimateOutput,
   type PreviewEstimateOutput,
+  type EstimateBaseline,
 } from "./projects-schema";
 
 const INTAKE_MODEL = "google/gemini-3.7-flash";
@@ -123,7 +124,15 @@ Guidelines:
 - Value-added should be realistic: modest projects often add 50-100% of cost or less; high-impact kitchen/bath work may add more. Use percent of home value where helpful.
 - For each step, recommend 0-3 helpful tools. Required tools are necessary to complete the step; recommended tools are optional but save meaningful time/effort. Provide plausible buy and rental search links as URLs to a major retailer or rental search (e.g. The Home Depot, Lowe's, Sunbelt). Set estimated prices to null when truly unknown.
 - If a tool would save hours, set hours_saved to a positive number and explain in rationale.
-- Keep each range TIGHT (high end no more than ~25% above low end). Each method is one specific approach, not a blend. Return "estimate_notes" explaining assumptions.`;
+- Keep each range TIGHT (high end no more than ~25% above low end). Each method is one specific approach, not a blend. Return "estimate_notes" explaining assumptions.${
+    input.targetTotals
+      ? `
+
+## Previewed totals (the homeowner already saw and accepted these)
+${JSON.stringify(input.targetTotals)}
+Your cheap_* and fast_* totals MUST match these previewed numbers (within ~5%). Build the steps and tools so they add up to them.`
+      : ""
+  }`;
 }
 
 function extractJsonBlock(text: string): string {
@@ -224,19 +233,31 @@ export async function previewProjectEstimate(
   input: GenerateEstimateInput,
   context: { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null },
   apiKey: string,
+  baseline: EstimateBaseline | null = null,
 ): Promise<PreviewEstimateOutput> {
   const gateway = createLovableAiGatewayProvider(apiKey, undefined, { structuredOutputs: false });
-  const model = gateway(INTAKE_MODEL);
+  // Same model as the full estimate so preview and finalized numbers agree.
+  const model = gateway(ESTIMATE_MODEL);
+  const baselineBlock = baseline
+    ? `
+## Current saved estimate (for the ORIGINAL spec below)
+Original spec:
+${Object.entries(baseline.spec).map(([k, v]) => `- ${k}: ${v}`).join("\n")}
+Saved totals: ${JSON.stringify(baseline.totals)}
+
+Start from the saved totals and adjust ONLY for what changed between the original spec and the new spec. Work out the change concretely: quantity (area/length with ~10% waste) x unit price difference of the material, plus any added/removed supplies, underlayment, tools, or labor that the change implies. Unchanged items keep their saved cost and hours.`
+    : "";
   const system = `You are Homebench, an expert residential cost estimator for US DIY homeowners.
 
 ${homeContextPrompt({ ...input, ...context })}
+${baselineBlock}
 
-## Project spec
+## New project spec
 Title: ${input.title}
 ${Object.entries(input.spec).map(([k, v]) => `- ${k}: ${v}`).join("\n")}
 
 Estimate two methods with TIGHT ranges (high no more than ~25% above low):
-- CHEAPEST: materials + required tools only (owned tools $0).
+- CHEAPEST: materials + permits + supplies + required tools only (buy or rent, whichever is cheaper; owned tools $0).
 - FASTEST: cheapest plus recommended time-saving tools (buy or rent, whichever is cheaper).
 
 Return ONLY JSON:
@@ -244,7 +265,7 @@ Return ONLY JSON:
   "cheap_cost_low": number, "cheap_cost_high": number, "cheap_hours_low": number, "cheap_hours_high": number,
   "fast_cost_low": number, "fast_cost_high": number, "fast_hours_low": number, "fast_hours_high": number,
   "estimated_value_added": number | null,
-  "summary": string // one sentence on what drives the numbers
+  "summary": string // one sentence on what drives the change
 }`;
   const { text } = await generateText({
     model,
