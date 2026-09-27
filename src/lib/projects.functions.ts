@@ -133,16 +133,18 @@ async function loadEstimateContext(
   homeId: string,
   roomId: string | null | undefined,
 ) {
-  const [{ data: home }, { data: room }] = await Promise.all([
+  const [{ data: home }, { data: room }, { data: tools }] = await Promise.all([
     supabase.from("homes").select("square_feet, estimated_value").eq("id", homeId).single(),
     roomId
       ? supabase.from("rooms").select("name, room_type").eq("id", roomId).single()
       : Promise.resolve({ data: null }),
+    supabase.from("tools").select("name"),
   ]);
   return {
     roomName: room?.name ?? null,
     roomType: room?.room_type ?? null,
     homeSquareFeet: home?.square_feet ?? null,
+    ownedTools: (tools ?? []).map((t) => t.name),
   };
 }
 

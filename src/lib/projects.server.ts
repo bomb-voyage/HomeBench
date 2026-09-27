@@ -1,5 +1,6 @@
 import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
+import { normalizeToolName } from "./tools-schema";
 import {
   intakeResponseSchema,
   projectEstimateSchema,
@@ -22,14 +23,27 @@ function formatCurrency(value: number | null | undefined): string {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
-function homeContextPrompt(input: Pick<GenerateEstimateInput, "homeValue" | "scopeType"> & { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null }): string {
+type EstimateContext = { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null; ownedTools?: string[] };
+
+function ownedToolsPrompt(owned: string[] | undefined): string {
+  if (!owned || owned.length === 0) return "\n## Homeowner's toolkit\nThe homeowner has not listed any owned tools.";
+  return `
+## Homeowner's toolkit (tools they ALREADY OWN)
+${owned.map((t) => `- ${t}`).join("\n")}
+Rules for owned tools:
+- The CHEAPEST method must use any owned tool that can do the job, even if another approach might be marginally cheaper.
+- Owned tools cost $0 in every method. Never include their price in any cost total.
+- When an owned tool is used in a step, list it with its EXACT name from this list, "already_owned": true, "acquisition": "already_owned".`;
+}
+
+function homeContextPrompt(input: Pick<GenerateEstimateInput, "homeValue" | "scopeType"> & EstimateContext): string {
   const lines = [
     "## Home context",
     `- Project scope: ${input.scopeType === "whole_property" ? "whole property / exterior" : `specific room${input.roomName ? ` (${input.roomName}${input.roomType ? `, ${input.roomType}` : ""})` : ""}`}`,
     input.homeSquareFeet ? `- Home size: ${input.homeSquareFeet} sq ft` : null,
     input.homeValue ? `- Estimated home value: ${formatCurrency(input.homeValue)}` : null,
   ].filter(Boolean);
-  return lines.join("\n");
+  return lines.join("\n") + "\n" + ownedToolsPrompt(input.ownedTools);
 }
 
 function intakeSystemPrompt(): string {
@@ -65,7 +79,7 @@ Return JSON matching this schema exactly:
 }`;
 }
 
-function estimateSystemPrompt(input: GenerateEstimateInput & { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null }): string {
+function estimateSystemPrompt(input: GenerateEstimateInput & EstimateContext): string {
   return `You are Homebench, an expert residential cost estimator. Produce a detailed, practical estimate for a DIY homeowner in the United States.
 
 ${homeContextPrompt(input)}
@@ -204,7 +218,7 @@ export async function askNextIntakeQuestion(
 
 export async function generateProjectEstimate(
   input: GenerateEstimateInput,
-  context: { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null },
+  context: EstimateContext,
   apiKey: string,
 ): Promise<ProjectEstimateOutput> {
   const gateway = createLovableAiGatewayProvider(apiKey, undefined, { structuredOutputs: false });
@@ -223,6 +237,7 @@ export async function generateProjectEstimate(
 
   const parsed = JSON.parse(extractJsonBlock(text));
   const result = projectEstimateSchema.parse(parsed);
+  markOwnedTools(result, context.ownedTools ?? []);
   // Keep legacy combined fields populated: cost from cheapest, hours from fastest..cheapest
   result.estimated_cost_low = result.cheap_cost_low ?? result.estimated_cost_low ?? null;
   result.estimated_cost_high = result.fast_cost_high ?? result.estimated_cost_high ?? null;
@@ -233,7 +248,7 @@ export async function generateProjectEstimate(
 
 export async function previewProjectEstimate(
   input: GenerateEstimateInput,
-  context: { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null },
+  context: EstimateContext,
   apiKey: string,
   baseline: EstimateBaseline | null = null,
 ): Promise<PreviewEstimateOutput> {
@@ -317,6 +332,18 @@ Return ONLY JSON:
     ],
   });
   return validateSpecOptionResultSchema.parse(JSON.parse(extractJsonBlock(text)));
+}
+
+function markOwnedTools(result: ProjectEstimateOutput, owned: string[]) {
+  const ownedSet = new Set(owned.map(normalizeToolName));
+  const mark = (t: ProjectEstimateOutput["tools"][number]) => {
+    if (ownedSet.has(normalizeToolName(t.tool_name)) || t.already_owned || t.acquisition === "already_owned") {
+      t.already_owned = true;
+      t.acquisition = "already_owned";
+    }
+  };
+  result.tools.forEach(mark);
+  result.steps.forEach((s) => s.recommended_tools.forEach(mark));
 }
 
 export function buildSearchLinks(toolName: string): { buy: string; rent: string } {
