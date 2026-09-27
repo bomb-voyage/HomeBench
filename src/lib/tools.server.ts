@@ -23,7 +23,7 @@ export async function suggestStandardTools(query: string, apiKey: string): Promi
     fetch: runIdFetch.fetch,
   });
   const result = streamText({
-    model: provider.responses(TOOL_MODEL),
+    model: provider.responses(TOOL_MODEL) as unknown as Parameters<typeof streamText>[0]["model"],
     system: `You standardize names of tools a US homeowner might own for DIY projects.
 Given what the user typed (possibly misspelled, a brand, or vague), return 3-6 standardized tool names they most likely mean, best match first.
 Use generic trade names (e.g. "Cordless drill/driver", "Circular saw", "Wet tile saw", "Post hole digger"), not brand or model names. Put any brand in "brand" only if the user typed one.
