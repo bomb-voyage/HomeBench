@@ -129,7 +129,7 @@ Return JSON matching this schema exactly:
   ],
   "tools": [
     // Flat list of all distinct tools across steps with the same schema as recommended_tools.
-    // Mark already_owned false unless the spec clearly says the user owns it.
+    // Mark already_owned true only for tools in the homeowner's toolkit.
   ]
 }
 
