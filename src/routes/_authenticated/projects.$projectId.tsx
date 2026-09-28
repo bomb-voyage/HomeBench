@@ -516,6 +516,9 @@ function ProjectDetailPage() {
               )}
             </CardContent>
           </Card>
+          <div className="flex justify-end">
+            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="lg" />
+          </div>
         </div>
 
         <div className="space-y-6">
