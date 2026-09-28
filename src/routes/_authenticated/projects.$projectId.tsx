@@ -374,21 +374,18 @@ function ProjectDetailPage() {
             <Badge variant={project.estimate_status === "estimated" ? "default" : "secondary"}>
               {estimateStatusLabel(project.estimate_status)}
             </Badge>
-            <Select
-              value={project.status}
-              onValueChange={(value) => updateMutation.mutate({ status: value })}
-            >
-              <SelectTrigger className="h-7 w-auto text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROJECT_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {statusLabel(s)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="sm" />
+...
             </Select>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => estimateMutation.mutate()}
+            disabled={isEstimating}
+          >
+            {isEstimating ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           </div>
         </div>
         <div className="flex items-center gap-2">
