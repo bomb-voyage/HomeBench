@@ -107,6 +107,77 @@ export type Database = {
         }
         Relationships: []
       }
+      project_completions: {
+        Row: {
+          actual_cost: number | null
+          actual_hours: number | null
+          completed_at: string
+          created_at: string
+          estimated_cost_high: number | null
+          estimated_cost_low: number | null
+          estimated_hours_high: number | null
+          estimated_hours_low: number | null
+          estimated_value_added: number | null
+          id: string
+          project_id: string
+          project_title: string
+          room_type: string | null
+          scope_type: string | null
+          spec: Json
+          tools_owned: Json
+          tools_used: Json
+          user_id: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_hours?: number | null
+          completed_at?: string
+          created_at?: string
+          estimated_cost_high?: number | null
+          estimated_cost_low?: number | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          estimated_value_added?: number | null
+          id?: string
+          project_id: string
+          project_title: string
+          room_type?: string | null
+          scope_type?: string | null
+          spec?: Json
+          tools_owned?: Json
+          tools_used?: Json
+          user_id: string
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_hours?: number | null
+          completed_at?: string
+          created_at?: string
+          estimated_cost_high?: number | null
+          estimated_cost_low?: number | null
+          estimated_hours_high?: number | null
+          estimated_hours_low?: number | null
+          estimated_value_added?: number | null
+          id?: string
+          project_id?: string
+          project_title?: string
+          room_type?: string | null
+          scope_type?: string | null
+          spec?: Json
+          tools_owned?: Json
+          tools_used?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_completions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_estimates: {
         Row: {
           cheap_cost_high: number | null
@@ -312,10 +383,13 @@ export type Database = {
       }
       projects: {
         Row: {
+          actual_cost: number | null
+          actual_hours: number | null
           cheap_cost_high: number | null
           cheap_cost_low: number | null
           cheap_hours_high: number | null
           cheap_hours_low: number | null
+          completed_at: string | null
           created_at: string
           description: string | null
           estimate_notes: string | null
@@ -345,10 +419,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actual_cost?: number | null
+          actual_hours?: number | null
           cheap_cost_high?: number | null
           cheap_cost_low?: number | null
           cheap_hours_high?: number | null
           cheap_hours_low?: number | null
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           estimate_notes?: string | null
@@ -378,10 +455,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actual_cost?: number | null
+          actual_hours?: number | null
           cheap_cost_high?: number | null
           cheap_cost_low?: number | null
           cheap_hours_high?: number | null
           cheap_hours_low?: number | null
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           estimate_notes?: string | null
