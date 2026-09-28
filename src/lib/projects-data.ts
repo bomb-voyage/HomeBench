@@ -23,6 +23,22 @@ export function projectQuery(projectId: string | undefined) {
   });
 }
 
+export function completedTotals(projects: Array<{ status: string; estimated_value_added: number | null }>) {
+  const done = projects.filter((p) => p.status === "done") as Array<{
+    estimated_value_added: number | null;
+    actual_cost?: number | null;
+    actual_hours?: number | null;
+  }>;
+  const sum = (f: (p: (typeof done)[number]) => number | null | undefined) =>
+    done.reduce((acc, p) => acc + (f(p) ?? 0), 0);
+  return {
+    count: done.length,
+    cost: sum((p) => p.actual_cost),
+    hours: sum((p) => p.actual_hours),
+    value: sum((p) => p.estimated_value_added),
+  };
+}
+
 export function formatCurrency(value: number | null | undefined) {
   if (value == null || Number.isNaN(value)) return "—";
   return `$${Math.round(value).toLocaleString()}`;

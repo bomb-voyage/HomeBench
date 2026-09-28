@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, ArrowRight, ClipboardList } from "lucide-react";
+import { Plus, ArrowRight, ClipboardList, CheckCircle2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   formatCurrency,
   formatHours,
   estimateStatusLabel,
+  completedTotals,
 } from "@/lib/projects-data";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
@@ -35,7 +36,10 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 
 function ProjectsPage() {
   const { data: home, isLoading: homeLoading } = useQuery(homeQuery);
-  const { data: projects = [], isLoading: projectsLoading } = useQuery(projectsQuery(home?.id));
+  const { data: allProjects = [], isLoading: projectsLoading } = useQuery(projectsQuery(home?.id));
+  const projects = allProjects.filter((p) => p.status !== "done");
+  const completed = allProjects.filter((p) => p.status === "done");
+  const totals = completedTotals(allProjects);
 
   const isLoading = homeLoading || projectsLoading;
 
@@ -133,6 +137,52 @@ function ProjectsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {completed.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-2xl font-extrabold">Your completed projects</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {completed.length} completed · Total cost{" "}
+            <span className="stat-figure text-foreground">{formatCurrency(totals.cost)}</span> · Total hours{" "}
+            <span className="stat-figure text-foreground">{formatHours(totals.hours)}</span> · Value added{" "}
+            <span className="stat-figure text-success">+{formatCurrency(totals.value)}</span>
+          </p>
+          <Card className="mt-4">
+            <CardContent className="divide-y divide-border p-0">
+              {completed.map((p) => {
+                const pa = p as typeof p & { actual_cost: number | null; actual_hours: number | null };
+                return (
+                  <Link
+                    key={p.id}
+                    to="/projects/$projectId"
+                    params={{ projectId: p.id }}
+                    className="grid grid-cols-2 gap-2 px-6 py-4 text-sm hover:bg-muted sm:grid-cols-4"
+                  >
+                    <span className="flex items-center gap-2 font-medium">
+                      <CheckCircle2 className="size-4 text-success" />
+                      {p.title}
+                    </span>
+                    <span>
+                      <span className="label-caps mr-2">Cost</span>
+                      <span className="stat-figure">{pa.actual_cost != null ? formatCurrency(pa.actual_cost) : "—"}</span>
+                    </span>
+                    <span>
+                      <span className="label-caps mr-2">Hours</span>
+                      <span className="stat-figure">{pa.actual_hours != null ? formatHours(pa.actual_hours) : "—"}</span>
+                    </span>
+                    <span>
+                      <span className="label-caps mr-2">Value</span>
+                      <span className="stat-figure text-success">
+                        {p.estimated_value_added != null ? `+${formatCurrency(p.estimated_value_added)}` : "—"}
+                      </span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </section>
       )}
     </AppShell>
   );
