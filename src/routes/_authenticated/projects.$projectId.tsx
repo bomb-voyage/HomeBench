@@ -44,6 +44,7 @@ import {
   validateSpecOption,
   nextIntakeQuestion,
 } from "@/lib/projects.functions";
+import { CompleteProjectDialog } from "@/components/complete-project-dialog";
 import {
   PROJECT_STATUSES,
   PROJECT_SCOPE_TYPES,
@@ -375,17 +376,6 @@ function ProjectDetailPage() {
               {estimateStatusLabel(project.estimate_status)}
             </Badge>
             <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="sm" />
-...
-            </Select>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => estimateMutation.mutate()}
-            disabled={isEstimating}
-          >
-            {isEstimating ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           </div>
         </div>
         <div className="flex items-center gap-2">
