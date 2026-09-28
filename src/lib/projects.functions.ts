@@ -103,6 +103,67 @@ export const updateProject = createServerFn({ method: "POST" })
     return project;
   });
 
+export const completeProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        actualCost: z.number().min(0).max(10_000_000).nullable(),
+        actualHours: z.number().min(0).max(100_000).nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: project, error } = await context.supabase
+      .from("projects")
+      .select("*, rooms(room_type), project_tools(tool_name, already_owned, role)")
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .single();
+    if (error || !project) throw new Error(error?.message ?? "Project not found");
+
+    const completedAt = new Date().toISOString();
+    const tools = (project.project_tools ?? []) as Array<{ tool_name: string; already_owned: boolean; role: string }>;
+    const uniq = (list: string[]) => Array.from(new Map(list.map((n) => [n.toLowerCase(), n])).values());
+    const toolsUsed = uniq(tools.filter((t) => t.already_owned || t.role === "required").map((t) => t.tool_name));
+    const toolsOwned = uniq(tools.filter((t) => t.already_owned).map((t) => t.tool_name));
+
+    const { error: upErr } = await context.supabase
+      .from("projects")
+      .update({
+        status: "done",
+        actual_cost: data.actualCost,
+        actual_hours: data.actualHours,
+        completed_at: completedAt,
+      } as any)
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (upErr) throw new Error(upErr.message);
+
+    const p = project as any;
+    const { error: insErr } = await context.supabase.from("project_completions" as any).insert({
+      user_id: context.userId,
+      project_id: data.id,
+      project_title: p.title,
+      scope_type: p.scope_type,
+      room_type: p.rooms?.room_type ?? null,
+      spec: p.spec ?? {},
+      actual_cost: data.actualCost,
+      actual_hours: data.actualHours,
+      estimated_cost_low: p.cheap_cost_low ?? p.estimated_cost_low,
+      estimated_cost_high: p.fast_cost_high ?? p.estimated_cost_high,
+      estimated_hours_low: p.fast_hours_low ?? p.estimated_hours_low,
+      estimated_hours_high: p.cheap_hours_high ?? p.estimated_hours_high,
+      estimated_value_added: p.estimated_value_added,
+      tools_used: toolsUsed,
+      tools_owned: toolsOwned,
+      completed_at: completedAt,
+    } as any);
+    if (insErr) throw new Error(insErr.message);
+    return { success: true };
+  });
+
 export const deleteProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))

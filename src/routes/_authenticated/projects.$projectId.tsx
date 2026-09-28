@@ -44,6 +44,7 @@ import {
   validateSpecOption,
   nextIntakeQuestion,
 } from "@/lib/projects.functions";
+import { CompleteProjectDialog } from "@/components/complete-project-dialog";
 import {
   PROJECT_STATUSES,
   PROJECT_SCOPE_TYPES,
@@ -374,21 +375,7 @@ function ProjectDetailPage() {
             <Badge variant={project.estimate_status === "estimated" ? "default" : "secondary"}>
               {estimateStatusLabel(project.estimate_status)}
             </Badge>
-            <Select
-              value={project.status}
-              onValueChange={(value) => updateMutation.mutate({ status: value })}
-            >
-              <SelectTrigger className="h-7 w-auto text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROJECT_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {statusLabel(s)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="sm" />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -529,6 +516,9 @@ function ProjectDetailPage() {
               )}
             </CardContent>
           </Card>
+          <div className="flex justify-end">
+            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="lg" />
+          </div>
         </div>
 
         <div className="space-y-6">

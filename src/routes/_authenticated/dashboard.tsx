@@ -12,7 +12,8 @@ import {
   totalRoomArea,
 } from "@/lib/home-data";
 import { roomTypeLabel } from "@/lib/property-schema";
-import { projectsQuery, formatHours, formatPercent } from "@/lib/projects-data";
+import { projectsQuery, completedTotals } from "@/lib/projects-data";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,15 @@ function DashboardPage() {
   const { data: home, isLoading } = useQuery(homeQuery);
   const { data: rooms = [] } = useQuery(roomsQuery(home?.id));
   const { data: projects = [] } = useQuery(projectsQuery(home?.id));
+  const { data: tools = [] } = useQuery({
+    queryKey: ["tools"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("tools").select("id, name, category, brand").order("category").order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const totals = completedTotals(projects);
 
   if (isLoading) {
     return (
@@ -190,16 +200,39 @@ function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Upcoming
-            icon={Wrench}
-            title="Tool inventory"
-            body="Track what you own so each project only lists the gaps."
-          />
-          <Upcoming
-            icon={TrendingUp}
-            title="Value added"
-            body="See the estimated resale impact of each completed project."
-          />
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <Wrench className="size-4 text-primary" />
+                  <p className="font-semibold">Toolkit</p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/tools">Manage</Link>
+                </Button>
+              </div>
+              <p className="stat-figure mt-2 text-2xl font-semibold">{tools.length}</p>
+              <p className="text-sm text-muted-foreground">
+                {tools.length === 0
+                  ? "Add the tools you own so estimates only list the gaps."
+                  : `tool${tools.length === 1 ? "" : "s"} in your toolkit`}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="size-4 text-primary" />
+                <p className="font-semibold">Value added</p>
+              </div>
+              <p className="stat-figure mt-2 text-2xl font-semibold text-success">
+                +{formatCurrency(totals.value)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                From {totals.count} completed project{totals.count === 1 ? "" : "s"}
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AppShell>
