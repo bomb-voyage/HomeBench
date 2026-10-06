@@ -457,3 +457,21 @@ export const saveEstimate = createServerFn({ method: "POST" })
     await saveEstimateInternal(context.supabase, context.userId, data.projectId, data.spec, data.estimate);
     return { success: true };
   });
+
+export const listOtherProjectTools = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ projectId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { data: projects, error } = await context.supabase
+      .from("projects")
+      .select("id, title, status, project_tools(tool_name, role, hours_saved, already_owned)")
+      .eq("user_id", context.userId)
+      .neq("id", data.projectId)
+      .not("status", "in", "(done,archived)");
+    if (error) throw new Error(error.message);
+    return (projects ?? []).map((p) => ({
+      id: p.id,
+      title: p.title,
+      tools: ((p.project_tools ?? []) as Array<{ tool_name: string; role: string; hours_saved: number | null; already_owned: boolean }>),
+    }));
+  });
