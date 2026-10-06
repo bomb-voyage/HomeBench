@@ -510,7 +510,7 @@ function ProjectDetailPage() {
                             ? `${formatHours(step.estimated_hours_low)}–${formatHours(step.estimated_hours_high)}`
                             : "—"}
                         </p>
-                        <StepTools tools={toolsByStep.get(step.id) ?? []} />
+                        <StepTools projectId={project.id} tools={toolsByStep.get(step.id) ?? []} />
                       </li>
                     ))}
                 </ol>
