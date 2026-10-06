@@ -45,6 +45,7 @@ import {
   nextIntakeQuestion,
 } from "@/lib/projects.functions";
 import { CompleteProjectDialog } from "@/components/complete-project-dialog";
+import { ToolRelevanceDialog } from "@/components/tool-relevance-dialog";
 import {
   PROJECT_STATUSES,
   PROJECT_SCOPE_TYPES,
@@ -728,7 +729,7 @@ function ProjectDetailPage() {
                   No tools listed yet. Generate an estimate to see required and recommended tools.
                 </p>
               ) : (
-                uniqueTools.map((tool) => <ToolRow key={tool.id} tool={tool} />)
+                uniqueTools.map((tool) => <ToolRow key={tool.id} tool={tool} projectId={project.id} />)
               )}
             </CardContent>
           </Card>
@@ -860,7 +861,7 @@ function EstimateCard({
   );
 }
 
-function StepTools({ tools }: { tools: Array<{
+function StepTools({ tools, projectId }: { projectId: string; tools: Array<{
   id: string;
   tool_name: string;
   role: string;
@@ -885,7 +886,7 @@ function StepTools({ tools }: { tools: Array<{
             ) : (
               <Badge variant="secondary" className="text-[10px]">Recommended</Badge>
             )}
-            <span className="font-medium">{tool.tool_name}</span>
+            <ToolRelevanceDialog projectId={projectId} tool={tool}>{tool.tool_name}</ToolRelevanceDialog>
           </div>
           {tool.rationale && <p className="mt-1 text-xs text-muted-foreground">{tool.rationale}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
@@ -925,7 +926,7 @@ function StepTools({ tools }: { tools: Array<{
   );
 }
 
-function ToolRow({ tool }: { tool: {
+function ToolRow({ tool, projectId }: { projectId: string; tool: {
   id: string;
   tool_name: string;
   role: string;
@@ -940,7 +941,7 @@ function ToolRow({ tool }: { tool: {
   return (
     <div className="flex flex-col gap-1 rounded border border-border p-3 text-sm">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium">{tool.tool_name}</span>
+        <ToolRelevanceDialog projectId={projectId} tool={tool}>{tool.tool_name}</ToolRelevanceDialog>
         {tool.already_owned ? (
           <Badge variant="outline" className="border-success text-[10px] text-success">Owned</Badge>
         ) : (
