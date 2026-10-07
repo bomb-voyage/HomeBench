@@ -376,7 +376,7 @@ function ProjectDetailPage() {
             <Badge variant={project.estimate_status === "estimated" ? "default" : "secondary"}>
               {estimateStatusLabel(project.estimate_status)}
             </Badge>
-            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="sm" />
+            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="sm" actualCost={project.actual_cost} actualHours={project.actual_hours} />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -518,7 +518,7 @@ function ProjectDetailPage() {
             </CardContent>
           </Card>
           <div className="flex justify-end">
-            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="lg" />
+            <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="lg" actualCost={project.actual_cost} actualHours={project.actual_hours} />
           </div>
         </div>
 

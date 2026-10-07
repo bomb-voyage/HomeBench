@@ -176,6 +176,46 @@ export const completeProject = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+export const updateCompletedCosts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        actualCost: z.number().min(0).max(10_000_000).nullable(),
+        actualHours: z.number().min(0).max(100_000).nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { error: upErr } = await context.supabase
+      .from("projects")
+      .update({ actual_cost: data.actualCost, actual_hours: data.actualHours } as any)
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .eq("status", "done");
+    if (upErr) throw new Error(upErr.message);
+
+    // Keep the completion record in sync (latest one for this project)
+    const { data: completion } = await context.supabase
+      .from("project_completions" as any)
+      .select("id")
+      .eq("project_id", data.id)
+      .eq("user_id", context.userId)
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (completion) {
+      const { error: cErr } = await context.supabase
+        .from("project_completions" as any)
+        .update({ actual_cost: data.actualCost, actual_hours: data.actualHours } as any)
+        .eq("id", (completion as any).id)
+        .eq("user_id", context.userId);
+      if (cErr) throw new Error(cErr.message);
+    }
+    return { success: true };
+  });
+
 export const deleteProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
