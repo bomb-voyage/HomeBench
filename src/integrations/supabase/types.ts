@@ -411,6 +411,7 @@ export type Database = {
           reference_image_path: string | null
           room_id: string | null
           scope_type: string
+          sort_order: number | null
           spec: Json | null
           spec_options: Json
           status: string
@@ -447,6 +448,7 @@ export type Database = {
           reference_image_path?: string | null
           room_id?: string | null
           scope_type?: string
+          sort_order?: number | null
           spec?: Json | null
           spec_options?: Json
           status?: string
@@ -483,6 +485,7 @@ export type Database = {
           reference_image_path?: string | null
           room_id?: string | null
           scope_type?: string
+          sort_order?: number | null
           spec?: Json | null
           spec_options?: Json
           status?: string

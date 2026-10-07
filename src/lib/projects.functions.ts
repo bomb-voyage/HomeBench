@@ -36,6 +36,18 @@ export const listProjects = createServerFn({ method: "GET" })
     return projects ?? [];
   });
 
+export const reorderProjects = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ ids: z.array(z.string().uuid()).max(500) }).parse(data))
+  .handler(async ({ context, data }) => {
+    await Promise.all(
+      data.ids.map((id, i) =>
+        context.supabase.from("projects").update({ sort_order: i }).eq("id", id).eq("user_id", context.userId),
+      ),
+    );
+    return { ok: true };
+  });
+
 export const getProject = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
