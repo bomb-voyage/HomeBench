@@ -57,7 +57,8 @@ function ProjectsPage() {
     const ids = projects.map((p) => p.id);
     const from = ids.indexOf(dragId);
     const to = ids.indexOf(targetId);
-    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    const [moved] = ids.splice(from, 1);
+    ids.splice(to, 0, moved!);
     const key = projectsQuery(home?.id).queryKey;
     queryClient.setQueryData(key, (old: typeof allProjects | undefined) =>
       (old ?? []).map((p) => (ids.includes(p.id) ? { ...p, sort_order: ids.indexOf(p.id) } : p)),
