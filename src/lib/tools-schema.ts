@@ -23,7 +23,7 @@ export function toolNameParts(name: string): string[] {
     .split(/\s*(?:\/|&|\+|,|;|\band\b|\bor\b|\bwith\b)\s*/)
     .map((p) => normalizeToolName(p))
     .filter((p) => p.length > 1)
-    .map((p) => p.replace(/(\w{3,})s$/, "$1"));
+    .map((p) => p.replace(/ives$/, "ife").replace(/(\w{3,}[^s])s$/, "$1"));
   const whole = normalizeToolName(name);
   return Array.from(new Set([whole, ...parts]));
 }
