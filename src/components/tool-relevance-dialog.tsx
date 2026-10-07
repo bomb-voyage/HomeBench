@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { listOtherProjectTools } from "@/lib/projects.functions";
 import { formatCurrency, formatHours } from "@/lib/projects-data";
-import { normalizeToolName } from "@/lib/tools-schema";
+import { toolNamesMatch } from "@/lib/tools-schema";
 
 type Tool = {
   tool_name: string;
@@ -24,9 +24,8 @@ export function ToolRelevanceDialog({ projectId, tool, children }: { projectId: 
     enabled: open,
   });
 
-  const key = normalizeToolName(tool.tool_name);
   const matches = (query.data ?? []).flatMap((p) => {
-    const hits = p.tools.filter((t) => normalizeToolName(t.tool_name) === key);
+    const hits = p.tools.filter((t) => toolNamesMatch(t.tool_name, tool.tool_name));
     if (hits.length === 0) return [];
     const required = hits.some((t) => t.role === "required");
     const hoursSaved = Math.max(0, ...hits.map((t) => t.hours_saved ?? 0));
