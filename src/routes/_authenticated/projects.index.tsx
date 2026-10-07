@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, ArrowRight, ClipboardList, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, ArrowRight, ClipboardList, CheckCircle2, GripVertical } from "lucide-react";
+import { reorderProjects } from "@/lib/projects.functions";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,32 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 function ProjectsPage() {
   const { data: home, isLoading: homeLoading } = useQuery(homeQuery);
   const { data: allProjects = [], isLoading: projectsLoading } = useQuery(projectsQuery(home?.id));
-  const projects = allProjects.filter((p) => p.status !== "done");
+  const queryClient = useQueryClient();
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const projects = allProjects
+    .filter((p) => p.status !== "done")
+    .sort((a, b) => {
+      const sa = a.sort_order, sb = b.sort_order;
+      if (sa != null && sb != null) return sa - sb;
+      if (sa != null) return -1;
+      if (sb != null) return 1;
+      return (b.estimated_value_added ?? -Infinity) - (a.estimated_value_added ?? -Infinity);
+    });
+
+  const handleDrop = async (targetId: string) => {
+    if (!dragId || dragId === targetId) return;
+    const ids = projects.map((p) => p.id);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(targetId);
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    const key = projectsQuery(home?.id).queryKey;
+    queryClient.setQueryData(key, (old: typeof allProjects | undefined) =>
+      (old ?? []).map((p) => (ids.includes(p.id) ? { ...p, sort_order: ids.indexOf(p.id) } : p)),
+    );
+    await reorderProjects({ data: { ids } });
+    queryClient.invalidateQueries({ queryKey: key });
+  };
   const completed = allProjects.filter((p) => p.status === "done");
   const totals = completedTotals(allProjects);
 
@@ -86,14 +113,39 @@ function ProjectsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
-            <Card key={project.id} className="transition-shadow hover:shadow-card">
+            <Card
+              key={project.id}
+              draggable
+              onDragStart={(e) => {
+                setDragId(project.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOverId(project.id);
+              }}
+              onDragLeave={() => setOverId((id) => (id === project.id ? null : id))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setOverId(null);
+                void handleDrop(project.id);
+              }}
+              onDragEnd={() => {
+                setDragId(null);
+                setOverId(null);
+              }}
+              className={`cursor-grab transition-shadow hover:shadow-card active:cursor-grabbing ${dragId === project.id ? "opacity-50" : ""} ${overId === project.id && dragId !== project.id ? "ring-2 ring-primary" : ""}`}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="flex items-start gap-2">
+                    <GripVertical className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <div>
                     <CardTitle className="text-lg">{project.title}</CardTitle>
                     <CardDescription className="mt-1">
                       {project.rooms ? (project.rooms as { name: string; room_type: string }).name : project.scope_type}
                     </CardDescription>
+                    </div>
                   </div>
                   <Badge variant={project.estimate_status === "estimated" ? "default" : "secondary"}>
                     {estimateStatusLabel(project.estimate_status)}
