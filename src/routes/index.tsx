@@ -61,7 +61,7 @@ function Landing() {
       <section className="mx-auto max-w-5xl px-4 pt-20 pb-16">
         <p className="label-caps">For homeowners who do the work themselves</p>
         <h1 className="mt-4 max-w-2xl text-5xl leading-[1.05] font-extrabold sm:text-6xl">
-          Your house. Your projects. One dashboard
+          Your house. Your projects. One dashboard.
         </h1>
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           Homebench starts with the one thing every estimate depends on: an accurate picture of your
