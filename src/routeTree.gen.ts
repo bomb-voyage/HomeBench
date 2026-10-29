@@ -17,6 +17,7 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedProjectsRouteRouteImport } from './routes/_authenticated/projects.route'
 import { Route as AuthenticatedRoomsRouteImport } from './routes/_authenticated/rooms'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
+import { Route as ApiMaterialImageRouteImport } from './routes/api/material-image'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedProjectsNewRouteImport } from './routes/_authenticated/projects.new'
@@ -61,6 +62,11 @@ const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiMaterialImageRoute = ApiMaterialImageRouteImport.update({
+  id: '/api/material-image',
+  path: '/api/material-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthenticatedHomeRoute
   '/rooms': typeof AuthenticatedRoomsRoute
   '/tools': typeof AuthenticatedToolsRoute
+  '/api/material-image': typeof ApiMaterialImageRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/rooms': typeof AuthenticatedRoomsRoute
   '/tools': typeof AuthenticatedToolsRoute
+  '/api/material-image': typeof ApiMaterialImageRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/rooms': typeof AuthenticatedRoomsRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
+  '/api/material-image': typeof ApiMaterialImageRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/projects/new': typeof AuthenticatedProjectsNewRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/rooms'
     | '/tools'
+    | '/api/material-image'
     | '/projects/$projectId'
     | '/projects/new'
     | '/projects/'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/rooms'
     | '/tools'
+    | '/api/material-image'
     | '/projects/$projectId'
     | '/projects/new'
     | '/projects'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/_authenticated/home'
     | '/_authenticated/rooms'
     | '/_authenticated/tools'
+    | '/api/material-image'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/projects/new'
     | '/_authenticated/projects/'
@@ -160,6 +172,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiMaterialImageRoute: typeof ApiMaterialImageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tools'
       preLoaderRoute: typeof AuthenticatedToolsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/material-image': {
+      id: '/api/material-image'
+      path: '/api/material-image'
+      fullPath: '/api/material-image'
+      preLoaderRoute: typeof ApiMaterialImageRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/projects/': {
       id: '/_authenticated/projects/'
@@ -285,6 +305,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiMaterialImageRoute: ApiMaterialImageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -97,6 +97,7 @@ export type ValidateSpecOptionResult = z.infer<typeof validateSpecOptionResultSc
 export const intakeResponseSchema = z.object({
   done: z.boolean().default(false),
   question: z.string().nullable().optional(),
+  material_options: z.array(z.string().trim().min(1).max(80)).max(4).nullable().optional(),
   spec: projectSpecSchema,
 });
 

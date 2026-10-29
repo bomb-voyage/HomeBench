@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 
+import { MaterialOptionCards } from "@/components/material-option-cards";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ function NewProjectPage() {
   const [messages, setMessages] = useState<IntakeMessage[]>([]);
   const [spec, setSpec] = useState<Record<string, unknown>>({});
   const [input, setInput] = useState("");
+  const [optionsByIndex, setOptionsByIndex] = useState<Record<number, string[]>>({});
   const [isAsking, setIsAsking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEstimating, setIsEstimating] = useState(false);
@@ -86,10 +88,16 @@ function NewProjectPage() {
       setError(null);
     },
     onSuccess: (response) => {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: response.question ?? "All set — ready to estimate." },
-      ]);
+      setMessages((prev) => {
+        const opts = response.material_options;
+        if (opts && opts.length > 1) {
+          setOptionsByIndex((o) => ({ ...o, [prev.length]: opts }));
+        }
+        return [
+          ...prev,
+          { role: "assistant", content: response.question ?? "All set — ready to estimate." },
+        ];
+      });
       if (response.spec) {
         setSpec(response.spec);
       }
@@ -298,8 +306,8 @@ function NewProjectPage() {
                   </p>
                 )}
                 {messages.map((msg, idx) => (
+                  <div key={idx} className="space-y-2">
                   <div
-                    key={idx}
                     className={`max-w-[85%] rounded-lg px-4 py-3 text-sm ${
                       msg.role === "user"
                         ? "ml-auto bg-primary text-primary-foreground"
@@ -307,6 +315,17 @@ function NewProjectPage() {
                     }`}
                   >
                     {msg.content}
+                  </div>
+                  {optionsByIndex[idx] && (
+                    <MaterialOptionCards
+                      options={optionsByIndex[idx]}
+                      context={title || undefined}
+                      disabled={isAsking || isEstimating || idx !== messages.length - 1}
+                      onPick={(label) => {
+                        if (!isAsking && home) askMutation.mutate(label);
+                      }}
+                    />
+                  )}
                   </div>
                 ))}
                 {isAsking && (
