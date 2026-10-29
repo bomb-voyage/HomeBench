@@ -58,6 +58,7 @@ Rules:
 - After EVERY reply, return a complete \\"spec\\" object that includes every fact learned so far, preserving all facts from the previous spec. Do NOT return null or omit it. If absolutely nothing is known, return {}.
 - Set "done": true only when you have enough information to estimate (at minimum: project type, scope/location, approximate dimensions/area, and primary materials/finish). When done, "question" must be null. If you are not done, ask the single most important missing question.
 - Keep messages short and conversational, 1-2 sentences.
+- When your question asks the homeowner to choose between visually different materials or finishes (tile type, flooring, countertop, fence style, siding, paint sheen, etc.), set "material_options" to 2-4 short, specific option names (e.g. ["Natural stone tile", "Porcelain tile", "Ceramic tile"]) so we can show example pictures. Otherwise set it to null.
 
 Example response when some facts are known:
 {
@@ -75,6 +76,7 @@ Return JSON matching this schema exactly:
 {
   "done": boolean,
   "question": string | null, // next question; null when done
+  "material_options": string[] | null, // 2-4 visual material choices, or null
   "spec": object // key/value summary of all known facts so far
 }`;
 }
@@ -198,6 +200,7 @@ export async function askNextIntakeQuestion(
     return {
       done: result.done,
       question: result.question ?? null,
+      material_options: result.done ? null : (result.material_options ?? null),
       spec: result.spec ?? input.currentSpec ?? null,
     };
   } catch (error) {
