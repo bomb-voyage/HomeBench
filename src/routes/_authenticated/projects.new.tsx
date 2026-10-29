@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 
 import { MaterialOptionCards } from "@/components/material-option-cards";
+import { materialImageContext } from "@/lib/material-image-context";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,8 @@ export const Route = createFileRoute("/_authenticated/projects/new")({
         property: "og:description",
         content: "Describe a new DIY project and get AI-guided estimates.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: NewProjectPage,
@@ -54,6 +57,7 @@ function NewProjectPage() {
   const [spec, setSpec] = useState<Record<string, unknown>>({});
   const [input, setInput] = useState("");
   const [optionsByIndex, setOptionsByIndex] = useState<Record<number, string[]>>({});
+  const [imageContextsByIndex, setImageContextsByIndex] = useState<Record<number, string>>({});
   const [isAsking, setIsAsking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEstimating, setIsEstimating] = useState(false);
@@ -92,6 +96,13 @@ function NewProjectPage() {
         const opts = response.material_options;
         if (opts && opts.length > 1) {
           setOptionsByIndex((o) => ({ ...o, [prev.length]: opts }));
+          const context = materialImageContext({
+            title,
+            question: response.question,
+            spec: response.spec ?? spec,
+            description: prev.find((message) => message.role === "user")?.content,
+          });
+          setImageContextsByIndex((contexts) => ({ ...contexts, [prev.length]: context }));
         }
         return [
           ...prev,
@@ -319,7 +330,7 @@ function NewProjectPage() {
                   {optionsByIndex[idx] && (
                     <MaterialOptionCards
                       options={optionsByIndex[idx]}
-                      context={title || undefined}
+                      context={imageContextsByIndex[idx]}
                       disabled={isAsking || isEstimating || idx !== messages.length - 1}
                       onPick={(label) => {
                         if (!isAsking && home) askMutation.mutate(label);

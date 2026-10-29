@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { materialImagePrompt } from "@/lib/material-image-context";
 
 const bodySchema = z.object({
   label: z.string().trim().min(1).max(80),
-  context: z.string().trim().max(200).optional(),
+  context: z.string().trim().max(4000).optional(),
   stream: z.boolean().optional(),
 });
 
@@ -27,9 +28,7 @@ export const Route = createFileRoute("/api/material-image")({
 
         const { generateImage, imageSettings } = await import("@/lib/image-gateway.server");
         const { label, context, stream = true } = parsed.data;
-        const prompt = `Photorealistic close-up example of "${label}" as a home improvement material${
-          context ? ` for: ${context}` : ""
-        }. Shown installed in a residential home, natural lighting, clear texture detail, no text, no people.`;
+        const prompt = materialImagePrompt(label, context);
         const upstream = await generateImage({ ...imageSettings, apiKey }, prompt, stream);
         return new Response(upstream.body, {
           status: upstream.status,
