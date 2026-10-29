@@ -30,7 +30,7 @@ function MaterialCard({
         const token = data.session?.access_token;
         await streamImage(
           "/api/material-image",
-          { label, context },
+          context ? { label, context } : { label },
           (url, isFinal) => {
             if (!active) return;
             setSrc(url);
