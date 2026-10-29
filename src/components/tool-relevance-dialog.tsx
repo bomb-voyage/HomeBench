@@ -1,13 +1,15 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { listOtherProjectTools } from "@/lib/projects.functions";
 import { formatCurrency, formatHours } from "@/lib/projects-data";
 import { toolNamesMatch } from "@/lib/tools-schema";
+import { toolShoppingLinks } from "@/lib/tool-shopping";
 
 type Tool = {
   tool_name: string;
@@ -35,13 +37,14 @@ export function ToolRelevanceDialog({ projectId, tool, children }: { projectId: 
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="link"
         onClick={() => setOpen(true)}
-        className="text-left font-medium underline decoration-dotted underline-offset-4 hover:text-primary"
+        className="h-auto whitespace-normal p-0 text-left font-medium text-foreground underline decoration-dotted underline-offset-4 hover:text-primary"
       >
         {children}
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -85,14 +88,25 @@ export function ToolRelevanceDialog({ projectId, tool, children }: { projectId: 
             <aside className="space-y-3 rounded border border-border bg-muted/40 p-4 text-sm">
               {tool.already_owned && <p className="text-xs text-success">Already in your toolkit</p>}
               <div>
-                <p className="text-xs text-muted-foreground">Approx. cost to buy</p>
+                <p className="text-xs text-muted-foreground">AI-estimated cost to buy</p>
                 <p className="text-lg font-semibold">{formatCurrency(tool.estimated_price)}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Approx. cost to rent</p>
+                <p className="text-xs text-muted-foreground">AI-estimated cost to rent</p>
                 <p className="text-lg font-semibold">
                   {tool.rental_price_per_day != null ? `${formatCurrency(tool.rental_price_per_day)}/day` : "—"}
                 </p>
+              </div>
+              <div className="space-y-2 border-t border-border pt-3">
+                <h3 className="text-sm font-semibold">Shop this tool</h3>
+                {toolShoppingLinks(tool.tool_name).map((link) => (
+                  <Button key={link.retailer} asChild variant="outline" size="sm" className="w-full justify-between">
+                    <a href={link.url} target="_blank" rel="noopener noreferrer">
+                      {link.retailer}<ExternalLink aria-hidden="true" />
+                    </a>
+                  </Button>
+                ))}
+                <p className="text-xs text-muted-foreground">Current prices on retailer sites. Select your store or ZIP there for local pricing and availability.</p>
               </div>
             </aside>
           </div>
