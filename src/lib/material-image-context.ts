@@ -2,7 +2,7 @@ export function materialImageContext(input: {
   title: string;
   question: string | null | undefined;
   spec: Record<string, unknown>;
-  description?: string;
+  description?: string | undefined;
 }): string {
   return JSON.stringify({
     project: input.title.slice(0, 300),
