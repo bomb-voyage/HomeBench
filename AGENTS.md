@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Validate free-form project specification options in an authenticated server function before adding them to estimate inputs, so unrelated values cannot corrupt estimates.
+- Build tool retailer search URLs in the shared tool-shopping module; keep AI estimates distinct from retailer prices and never infer live prices from estimates.
