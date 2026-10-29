@@ -12,8 +12,8 @@ function MaterialCard({
   onPick,
 }: {
   label: string;
-  context?: string;
-  disabled?: boolean;
+  context?: string | undefined;
+  disabled?: boolean | undefined;
   onPick: (label: string) => void;
 }) {
   const cacheKey = `${context ?? ""}|${label}`;
@@ -81,8 +81,8 @@ export function MaterialOptionCards({
   onPick,
 }: {
   options: string[];
-  context?: string;
-  disabled?: boolean;
+  context?: string | undefined;
+  disabled?: boolean | undefined;
   onPick: (label: string) => void;
 }) {
   return (
