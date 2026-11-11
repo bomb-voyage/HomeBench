@@ -77,7 +77,9 @@ function Landing() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
-            <Link to="/auth">Get started</Link>
+            <Link to="/auth" search={{ tab: "signup" }}>
+              Get started
+            </Link>
           </Button>
         </div>
       </section>
