@@ -134,7 +134,7 @@ function AuthPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin">
+              <Tabs defaultValue={tab}>
                 <TabsList className="w-full">
                   <TabsTrigger value="signin" className="flex-1">
                     Sign in
