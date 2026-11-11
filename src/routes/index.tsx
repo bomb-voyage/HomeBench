@@ -55,7 +55,9 @@ function Landing() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/auth">Sign in</Link>
+              <Link to="/auth" search={{ tab: "signin" }}>
+                Sign in
+              </Link>
             </Button>
             <Button asChild size="sm">
               <Link to="/auth" search={{ tab: "signup" }}>
