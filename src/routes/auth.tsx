@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
-    tab: search.tab === "signup" ? ("signup" as const) : ("signin" as const),
+    tab: search["tab"] === "signup" ? ("signup" as const) : undefined,
   }),
   head: () => ({
     meta: [
@@ -134,7 +134,7 @@ function AuthPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue={tab}>
+              <Tabs defaultValue={tab === "signup" ? "signup" : "signin"}>
                 <TabsList className="w-full">
                   <TabsTrigger value="signin" className="flex-1">
                     Sign in
