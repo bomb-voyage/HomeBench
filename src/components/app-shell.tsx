@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Hammer, House, LayoutGrid, LogOut, Ruler, Wrench } from "lucide-react";
+import { ClipboardList, Hammer, House, LayoutGrid, LifeBuoy, LogOut, Ruler, Wrench } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SUPPORT_MAILTO } from "@/lib/support";
 
 const NAV = [
   { to: "/dashboard", label: "Overview", short: "Overview", icon: LayoutGrid },
@@ -47,7 +48,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <Button variant="ghost" size="sm" className="ml-auto h-10 md:h-9" onClick={handleSignOut}>
+          <Button variant="ghost" size="sm" className="ml-auto h-10 md:h-9" asChild>
+            <a href={SUPPORT_MAILTO}>
+              <LifeBuoy className="size-4" />
+              <span className="hidden sm:inline">Support</span>
+            </a>
+          </Button>
+          <Button variant="ghost" size="sm" className="h-10 md:h-9" onClick={handleSignOut}>
             <LogOut className="size-4" />
             <span className="hidden sm:inline">Sign out</span>
           </Button>

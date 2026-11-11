@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Hammer, Ruler, ClipboardList, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/support";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -101,9 +102,17 @@ function Landing() {
       </section>
 
       <footer className="border-t border-border py-8">
-        <p className="mx-auto max-w-5xl px-4 text-sm text-muted-foreground">
-          Homebench — a DIY dashboard for homeowners.
-        </p>
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4">
+          <p className="text-sm text-muted-foreground">
+            Homebench — a DIY dashboard for homeowners.
+          </p>
+          <a
+            href={SUPPORT_MAILTO}
+            className="text-sm text-muted-foreground underline decoration-dotted underline-offset-4 hover:text-primary"
+          >
+            {SUPPORT_EMAIL}
+          </a>
+        </div>
       </footer>
     </div>
   );
