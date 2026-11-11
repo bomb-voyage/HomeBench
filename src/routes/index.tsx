@@ -53,9 +53,16 @@ function Landing() {
             </span>
             <span className="font-display text-xl font-bold tracking-tight">Homebench</span>
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/auth">Sign in</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/auth">Sign in</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/auth" search={{ tab: "signup" }}>
+                Get started
+              </Link>
+            </Button>
+          </div>
         </div>
       </header>
 
