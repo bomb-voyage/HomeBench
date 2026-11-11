@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    tab: search["tab"] === "signup" ? ("signup" as const) : undefined,
+  validateSearch: (search: Record<string, unknown>): { tab?: "signup" } => ({
+    tab: search["tab"] === "signup" ? "signup" : undefined,
   }),
   head: () => ({
     meta: [
