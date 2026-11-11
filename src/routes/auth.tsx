@@ -12,6 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { tab: "signin" | "signup" } => ({
+    tab: search["tab"] === "signup" ? "signup" : "signin",
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — Homebench" },
@@ -32,6 +35,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { tab } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -130,7 +134,7 @@ function AuthPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin">
+              <Tabs defaultValue={tab}>
                 <TabsList className="w-full">
                   <TabsTrigger value="signin" className="flex-1">
                     Sign in
