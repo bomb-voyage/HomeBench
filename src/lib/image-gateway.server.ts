@@ -7,7 +7,7 @@ export type ImageConfig = {
 
 export const imageSettings: Omit<ImageConfig, "apiKey"> = {
   baseURL: "https://ai.gateway.lovable.dev",
-  model: "openai/gpt-image-2.5-sunburst",
+  model: "openai/gpt-image-2.6-flare",
   format: "openai",
 };
 
