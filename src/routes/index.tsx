@@ -28,17 +28,17 @@ const STEPS = [
   {
     icon: Ruler,
     title: "Map your home",
-    body: "Start with your address — we pull the public property record where we can — then add each room with its real measurements.",
+    body: "Start with your address. We pull the public property record where we can, you add any additional details you want to share.",
   },
   {
     icon: ClipboardList,
-    title: "Line up projects",
-    body: "Keep every improvement you're considering in one list, with cost and labor estimates and its impact to your homes value.",
+    title: "Plan your projects",
+    body: "Set up your next home improvement project with our AI tool. All your projects are organized in one list, with cost and labor estimates and its impact to your home's value. Preview what your finished project will look like in our app.",
   },
   {
     icon: Wrench,
-    title: "Know your tools",
-    body: "Track what's in your toolbox to estimate how long each project will take, and if there's a tool worth adding based on your projects.",
+    title: "Improve your home",
+    body: "Finish all your desired home improvement projects and build your home equity.",
   },
 ];
 
@@ -75,7 +75,10 @@ function Landing() {
         </h1>
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           Homebench starts with the one thing every estimate depends on: an accurate picture of your
-          home. Room dimensions, property details, and the tools already in your bench.
+          home. Room dimensions, property details, and your tools. Add your home improvement
+          projects and Homebench will estimate the project's labor time, cost, and home value
+          increase. It will also give you step-by-step instructions to complete your project,
+          specified to your home and toolbox.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
@@ -104,11 +107,11 @@ function Landing() {
       </section>
 
       <section className="mx-auto max-w-5xl px-4 py-16">
-        <h2 className="text-2xl font-bold">Coming next</h2>
+        <h2 className="text-2xl font-bold">Use our app</h2>
         <p className="mt-3 max-w-xl text-muted-foreground">
-          Cost and labor-hour estimates per project, the value each project adds to your home, and
-          tool recommendations with the hours they'd save you. Those build directly on the home
-          profile you set up today.
+          Measure any area through your phone's camera. Preview your finished project through your
+          phone's camera. See how different designs and styles look in your home before you start
+          working.
         </p>
       </section>
 
