@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNativeArSupport } from "@/lib/native-ar";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { tab: "signin" | "signup" } => ({
@@ -41,6 +42,8 @@ function AuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+  // Google blocks OAuth inside in-app web views, so the iPhone app offers email sign-in only.
+  const { isNativeApp } = useNativeArSupport();
 
   useEffect(() => {
     let active = true;
@@ -215,15 +218,24 @@ function AuthPage() {
                 </TabsContent>
               </Tabs>
 
-              <div className="my-5 flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="label-caps">or</span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
+              {isNativeApp ? null : (
+                <>
+                  <div className="my-5 flex items-center gap-3">
+                    <span className="h-px flex-1 bg-border" />
+                    <span className="label-caps">or</span>
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
 
-              <Button variant="outline" className="w-full" disabled={busy} onClick={handleGoogle}>
-                Continue with Google
-              </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={handleGoogle}
+                  >
+                    Continue with Google
+                  </Button>
+                </>
+              )}
             </CardContent>
           </>
         )}

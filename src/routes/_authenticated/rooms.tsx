@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Ruler, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { homeQuery, roomsQuery, totalRoomArea, type RoomRow } from "@/lib/home-data";
 import { FLOOR_LEVELS, ROOM_TYPES, roomTypeLabel } from "@/lib/property-schema";
+import { measureWithCamera, scanRoomWithCamera, useNativeArSupport } from "@/lib/native-ar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +67,18 @@ const EMPTY_ROOM: RoomForm = {
   notes: "",
 };
 
+type DimensionKey = "length_ft" | "width_ft" | "ceiling_height_ft";
+
+const DIMENSION_FIELDS: { key: DimensionKey; id: string; label: string }[] = [
+  { key: "length_ft", id: "length", label: "Length" },
+  { key: "width_ft", id: "width", label: "Width" },
+  { key: "ceiling_height_ft", id: "ceiling", label: "Ceiling" },
+];
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 function numOrNull(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -80,6 +93,8 @@ function RoomsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RoomRow | null>(null);
   const [form, setForm] = useState<RoomForm>(EMPTY_ROOM);
+  const ar = useNativeArSupport();
+  const [cameraBusy, setCameraBusy] = useState(false);
 
   const set = (key: keyof RoomForm) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -102,6 +117,42 @@ function RoomsPage() {
       notes: room.notes ?? "",
     });
     setOpen(true);
+  }
+
+  async function handleScanRoom() {
+    setCameraBusy(true);
+    try {
+      const result = await scanRoomWithCamera();
+      if (!result) return;
+      setForm((prev) => ({
+        ...prev,
+        length_ft: result.lengthFt.toString(),
+        width_ft: result.widthFt.toString(),
+        ceiling_height_ft: result.ceilingHeightFt.toString(),
+      }));
+      toast.success(
+        `Scanned ${result.lengthFt} × ${result.widthFt} ft with a ${result.ceilingHeightFt} ft ceiling. Check the numbers, then save.`,
+      );
+    } catch (error) {
+      toast.error(errorMessage(error, "Room scan failed. Please try again."));
+    } finally {
+      setCameraBusy(false);
+    }
+  }
+
+  async function handleMeasure(field: (typeof DIMENSION_FIELDS)[number]) {
+    setCameraBusy(true);
+    try {
+      const measurements = await measureWithCamera();
+      const last = measurements?.at(-1);
+      if (!last) return;
+      set(field.key)((Math.round(last.feet * 10) / 10).toString());
+      toast.success(`${field.label} set to ${last.label}.`);
+    } catch (error) {
+      toast.error(errorMessage(error, "Measuring failed. Please try again."));
+    } finally {
+      setCameraBusy(false);
+    }
   }
 
   const saveRoom = useMutation({
@@ -348,34 +399,45 @@ function RoomsPage() {
                 </Select>
               </div>
             </div>
+            {ar.roomScan ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={cameraBusy}
+                onClick={handleScanRoom}
+              >
+                <ScanLine className="size-4" />
+                Scan room with camera
+              </Button>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="length">Length (ft)</Label>
-                <Input
-                  id="length"
-                  inputMode="decimal"
-                  value={form.length_ft}
-                  onChange={(e) => set("length_ft")(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="width">Width (ft)</Label>
-                <Input
-                  id="width"
-                  inputMode="decimal"
-                  value={form.width_ft}
-                  onChange={(e) => set("width_ft")(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ceiling">Ceiling (ft)</Label>
-                <Input
-                  id="ceiling"
-                  inputMode="decimal"
-                  value={form.ceiling_height_ft}
-                  onChange={(e) => set("ceiling_height_ft")(e.target.value)}
-                />
-              </div>
+              {DIMENSION_FIELDS.map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <Label htmlFor={field.id}>{field.label} (ft)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={field.id}
+                      inputMode="decimal"
+                      value={form[field.key]}
+                      onChange={(e) => set(field.key)(e.target.value)}
+                    />
+                    {ar.measure ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0"
+                        aria-label={`Measure ${field.label.toLowerCase()} with camera`}
+                        disabled={cameraBusy}
+                        onClick={() => handleMeasure(field)}
+                      >
+                        <Ruler className="size-4" />
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
