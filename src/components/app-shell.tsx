@@ -30,7 +30,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-card pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
-          <Link to="/dashboard" className="flex shrink-0 items-center gap-2">
+          <Link
+            to="/account"
+            title="Account"
+            className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80"
+          >
             <span className="flex size-7 items-center justify-center rounded bg-primary text-primary-foreground">
               <Hammer className="size-4" />
             </span>

@@ -42,6 +42,7 @@ function AuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+  const [resetView, setResetView] = useState<"none" | "request" | "sent">("none");
   // Google blocks OAuth inside in-app web views, so the iPhone app offers email sign-in only.
   const { isNativeApp } = useNativeArSupport();
 
@@ -104,6 +105,25 @@ function AuthPage() {
     navigate({ to: "/dashboard", replace: true });
   }
 
+  async function handleResetRequest(event: React.FormEvent) {
+    event.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setResetView("sent");
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4 py-12">
       <Link to="/" className="flex items-center gap-2">
@@ -126,6 +146,57 @@ function AuthPage() {
               <Button variant="outline" className="w-full" onClick={() => setAwaitingConfirm(false)}>
                 Back to sign in
               </Button>
+            </CardContent>
+          </>
+        ) : resetView === "sent" ? (
+          <>
+            <CardHeader>
+              <CardTitle>Check your email</CardTitle>
+              <CardDescription>
+                If an account exists for {email.trim()}, we sent a password reset link. Open the
+                link in your email to choose a new password.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" onClick={() => setResetView("none")}>
+                Back to sign in
+              </Button>
+            </CardContent>
+          </>
+        ) : resetView === "request" ? (
+          <>
+            <CardHeader>
+              <CardTitle>Reset your password</CardTitle>
+              <CardDescription>
+                Enter the email address on your account and we&apos;ll send you a reset link.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={handleResetRequest}>
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={busy}>
+                  Send reset link
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  disabled={busy}
+                  onClick={() => setResetView("none")}
+                >
+                  Back to sign in
+                </Button>
+              </form>
             </CardContent>
           </>
         ) : (
@@ -161,7 +232,16 @@ function AuthPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                          onClick={() => setResetView("request")}
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
                       <Input
                         id="signin-password"
                         type="password"
