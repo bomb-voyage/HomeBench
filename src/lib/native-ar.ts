@@ -38,14 +38,23 @@ const NO_SUPPORT: NativeArSupport = {
   lidar: false,
 };
 
-let pluginPromise: Promise<HomebenchArPlugin | null> | null = null;
+// Capacitor plugin objects are proxies that answer every property, including
+// `then`. Resolving a promise with one makes JS treat it as a thenable and call
+// a native method named "then", which fails. So the plugin travels in a box.
+type PluginBox = { plugin: HomebenchArPlugin } | null;
 
-function getPlugin(): Promise<HomebenchArPlugin | null> {
+let pluginBoxPromise: Promise<PluginBox> | null = null;
+
+function getPluginBox(): Promise<PluginBox> {
   if (typeof window === "undefined") return Promise.resolve(null);
-  pluginPromise ??= import("@capacitor/core").then(({ Capacitor, registerPlugin }) =>
-    Capacitor.getPlatform() === "ios" ? registerPlugin<HomebenchArPlugin>("HomebenchAR") : null,
-  );
-  return pluginPromise;
+  pluginBoxPromise ??= import("@capacitor/core")
+    .then(({ Capacitor, registerPlugin }): PluginBox =>
+      Capacitor.getPlatform() === "ios"
+        ? { plugin: registerPlugin<HomebenchArPlugin>("HomebenchAR") }
+        : null,
+    )
+    .catch((): PluginBox => null);
+  return pluginBoxPromise;
 }
 
 function isCancel(error: unknown) {
@@ -58,10 +67,10 @@ function isCancel(error: unknown) {
 }
 
 export async function getNativeArSupport(): Promise<NativeArSupport> {
-  const plugin = await getPlugin();
-  if (!plugin) return NO_SUPPORT;
+  const box = await getPluginBox();
+  if (!box) return NO_SUPPORT;
   try {
-    const support = await plugin.getSupport();
+    const support = await box.plugin.getSupport();
     return { isNativeApp: true, ...support };
   } catch {
     // App build without the plugin (older version still installed).
@@ -71,10 +80,10 @@ export async function getNativeArSupport(): Promise<NativeArSupport> {
 
 /** Opens the native room scanner. Resolves null if the user cancels. */
 export async function scanRoomWithCamera(): Promise<RoomScanResult | null> {
-  const plugin = await getPlugin();
-  if (!plugin) throw new Error("Room scanning is only available in the Homebench iPhone app.");
+  const box = await getPluginBox();
+  if (!box) throw new Error("Room scanning is only available in the Homebench iPhone app.");
   try {
-    return await plugin.scanRoom();
+    return await box.plugin.scanRoom();
   } catch (error) {
     if (isCancel(error)) return null;
     throw error;
@@ -83,10 +92,10 @@ export async function scanRoomWithCamera(): Promise<RoomScanResult | null> {
 
 /** Opens the native AR tape measure. Resolves null if the user cancels. */
 export async function measureWithCamera(): Promise<Measurement[] | null> {
-  const plugin = await getPlugin();
-  if (!plugin) throw new Error("Camera measuring is only available in the Homebench iPhone app.");
+  const box = await getPluginBox();
+  if (!box) throw new Error("Camera measuring is only available in the Homebench iPhone app.");
   try {
-    const { measurements } = await plugin.measure();
+    const { measurements } = await box.plugin.measure();
     return measurements;
   } catch (error) {
     if (isCancel(error)) return null;
