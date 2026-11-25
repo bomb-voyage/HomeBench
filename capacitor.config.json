@@ -1,0 +1,13 @@
+{
+  "appId": "app.homebench.ios",
+  "appName": "Homebench",
+  "webDir": "capacitor-shell",
+  "server": {
+    "url": "https://homebench.app/dashboard",
+    "errorPath": "error.html"
+  },
+  "ios": {
+    "backgroundColor": "#f4efe6",
+    "appendUserAgent": "HomebenchApp"
+  }
+}
