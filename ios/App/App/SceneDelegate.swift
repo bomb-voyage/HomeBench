@@ -10,8 +10,23 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         window?.rootViewController = HomebenchBridgeViewController()
         window?.makeKeyAndVisible()
+        if let window = window {
+            AppLock.shared.attach(to: window)
+        }
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        AppLock.shared.sceneDidEnterBackground()
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        AppLock.shared.sceneWillEnterForeground()
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        AppLock.shared.sceneDidBecomeActive()
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {

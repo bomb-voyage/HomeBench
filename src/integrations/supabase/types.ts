@@ -513,9 +513,13 @@ export type Database = {
       rooms: {
         Row: {
           area_sqft: number | null
+          cabinet_area_sqft: number | null
           ceiling_height_ft: number | null
+          closet_area_sqft: number | null
           created_at: string
+          floor_area_sqft: number | null
           floor_level: string
+          has_closet: boolean
           home_id: string
           id: string
           length_ft: number | null
@@ -524,13 +528,18 @@ export type Database = {
           room_type: string
           updated_at: string
           user_id: string
+          wall_area_sqft: number | null
           width_ft: number | null
         }
         Insert: {
           area_sqft?: number | null
+          cabinet_area_sqft?: number | null
           ceiling_height_ft?: number | null
+          closet_area_sqft?: number | null
           created_at?: string
+          floor_area_sqft?: number | null
           floor_level?: string
+          has_closet?: boolean
           home_id: string
           id?: string
           length_ft?: number | null
@@ -539,13 +548,18 @@ export type Database = {
           room_type?: string
           updated_at?: string
           user_id: string
+          wall_area_sqft?: number | null
           width_ft?: number | null
         }
         Update: {
           area_sqft?: number | null
+          cabinet_area_sqft?: number | null
           ceiling_height_ft?: number | null
+          closet_area_sqft?: number | null
           created_at?: string
+          floor_area_sqft?: number | null
           floor_level?: string
+          has_closet?: boolean
           home_id?: string
           id?: string
           length_ft?: number | null
@@ -554,6 +568,7 @@ export type Database = {
           room_type?: string
           updated_at?: string
           user_id?: string
+          wall_area_sqft?: number | null
           width_ft?: number | null
         }
         Relationships: [

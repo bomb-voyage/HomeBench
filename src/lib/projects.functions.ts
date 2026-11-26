@@ -238,7 +238,8 @@ export const nextIntakeQuestion = createServerFn({ method: "POST" })
     if (!apiKey) {
       throw new Error("AI gateway is not configured. Please set LOVABLE_API_KEY.");
     }
-    return askNextIntakeQuestion(data, apiKey);
+    const ctx = await loadEstimateContext(context.supabase, data.homeId, data.roomId);
+    return askNextIntakeQuestion(data, apiKey, ctx.room);
   });
 
 async function loadEstimateContext(
@@ -249,13 +250,31 @@ async function loadEstimateContext(
   const [{ data: home }, { data: room }, { data: tools }] = await Promise.all([
     supabase.from("homes").select("square_feet, estimated_value").eq("id", homeId).single(),
     roomId
-      ? supabase.from("rooms").select("name, room_type").eq("id", roomId).single()
+      ? supabase
+          .from("rooms")
+          .select(
+            "name, room_type, length_ft, width_ft, ceiling_height_ft, floor_area_sqft, wall_area_sqft, cabinet_area_sqft, has_closet, closet_area_sqft",
+          )
+          .eq("id", roomId)
+          .single()
       : Promise.resolve({ data: null }),
     supabase.from("tools").select("name"),
   ]);
   return {
     roomName: room?.name ?? null,
     roomType: room?.room_type ?? null,
+    room: room
+      ? {
+          lengthFt: room.length_ft,
+          widthFt: room.width_ft,
+          ceilingHeightFt: room.ceiling_height_ft,
+          floorAreaSqFt: room.floor_area_sqft,
+          wallAreaSqFt: room.wall_area_sqft,
+          cabinetAreaSqFt: room.cabinet_area_sqft,
+          hasCloset: room.has_closet,
+          closetAreaSqFt: room.closet_area_sqft,
+        }
+      : null,
     homeSquareFeet: home?.square_feet ?? null,
     ownedTools: (tools ?? []).map((t) => t.name),
   };

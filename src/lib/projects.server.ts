@@ -23,7 +23,62 @@ function formatCurrency(value: number | null | undefined): string {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
-type EstimateContext = { roomName?: string | null; roomType?: string | null; homeSquareFeet?: number | null; ownedTools?: string[] };
+export type RoomMeasurements = {
+  lengthFt: number | null;
+  widthFt: number | null;
+  ceilingHeightFt: number | null;
+  floorAreaSqFt: number | null;
+  wallAreaSqFt: number | null;
+  cabinetAreaSqFt: number | null;
+  hasCloset: boolean;
+  closetAreaSqFt: number | null;
+};
+
+type EstimateContext = {
+  roomName?: string | null;
+  roomType?: string | null;
+  room?: RoomMeasurements | null;
+  homeSquareFeet?: number | null;
+  ownedTools?: string[];
+};
+
+function sqft(value: number): string {
+  return `${Math.round(value).toLocaleString()} sq ft`;
+}
+
+/** Room measurements for the prompts, or "" when nothing useful is recorded. */
+function roomMeasurementsPrompt(room: RoomMeasurements | null | undefined): string {
+  if (!room) return "";
+  const rectangle =
+    room.lengthFt != null && room.widthFt != null ? room.lengthFt * room.widthFt : null;
+  const floor = room.floorAreaSqFt ?? rectangle;
+  const lines = [
+    room.lengthFt != null && room.widthFt != null
+      ? `- Length × width: ${room.lengthFt} × ${room.widthFt} ft${room.floorAreaSqFt != null ? " (outer bounding rectangle)" : ""}`
+      : null,
+    room.ceilingHeightFt != null ? `- Ceiling height: ${room.ceilingHeightFt} ft` : null,
+    floor != null
+      ? `- Floor area: ${sqft(floor)}${room.floorAreaSqFt != null ? " (true floor outline, so it already accounts for L-shapes and alcoves)" : " (length × width)"}, including floor under cabinets, excluding any closet`
+      : null,
+    room.cabinetAreaSqFt != null && room.cabinetAreaSqFt > 0
+      ? `- Floor covered by cabinets & built-ins (cabinets, vanities, tubs, ovens, dishwashers; approximate): ${sqft(room.cabinetAreaSqFt)}${floor != null ? `, so open floor ≈ ${sqft(Math.max(0, floor - room.cabinetAreaSqFt))}` : ""}`
+      : null,
+    room.wallAreaSqFt != null
+      ? `- Wall area: ${sqft(room.wallAreaSqFt)} (doors and windows already subtracted)`
+      : null,
+    room.hasCloset
+      ? `- Closet: yes${room.closetAreaSqFt != null ? `, ${sqft(room.closetAreaSqFt)} of closet floor` : " (size not recorded)"} — NOT included in the floor area above`
+      : "- Closet: none recorded",
+  ].filter(Boolean);
+  if (lines.length <= 1 && floor == null) return "";
+  return `
+## Room measurements (from the homeowner's room record; camera-scanned when available)
+${lines.join("\n")}
+How to use these:
+- Prefer these numbers over guesses, and don't ask the homeowner for measurements listed here.
+- Floor projects (flooring, tile, carpet, refinishing): flooring normally isn't installed under cabinets or tubs, so use the open floor area unless the project also replaces the cabinets. Include the closet floor unless the spec's "include_closet" is "no".
+- Wall projects (paint, wallpaper, wainscoting): use the wall area. Closet walls aren't included; add them only if the spec says to.`;
+}
 
 function ownedToolsPrompt(owned: string[] | undefined): string {
   if (!owned || owned.length === 0) return "\n## Homeowner's toolkit\nThe homeowner has not listed any owned tools.";
@@ -43,11 +98,30 @@ function homeContextPrompt(input: Pick<GenerateEstimateInput, "homeValue" | "sco
     input.homeSquareFeet ? `- Home size: ${input.homeSquareFeet} sq ft` : null,
     input.homeValue ? `- Estimated home value: ${formatCurrency(input.homeValue)}` : null,
   ].filter(Boolean);
-  return lines.join("\n") + "\n" + ownedToolsPrompt(input.ownedTools);
+  return (
+    lines.join("\n") +
+    "\n" +
+    roomMeasurementsPrompt(input.room) +
+    "\n" +
+    ownedToolsPrompt(input.ownedTools)
+  );
 }
 
-function intakeSystemPrompt(): string {
+function intakeRoomPrompt(room: RoomMeasurements | null | undefined): string {
+  const measurements = roomMeasurementsPrompt(room);
+  if (!measurements) return "";
+  const closetRule = room?.hasCloset
+    ? `
+- This room has a closet. If the project involves the floor and the spec has no "include_closet" key yet, ask whether to include the closet (mention its size if known), and record the answer as spec.include_closet = "yes" or "no".`
+    : "";
+  return `
+${measurements}
+- Copy any of these measurements the project needs into the spec (e.g. "floor_area_sqft", "wall_area_sqft") instead of asking for them.${closetRule}`;
+}
+
+function intakeSystemPrompt(room?: RoomMeasurements | null): string {
   return `You are Homebench, a friendly DIY home-project planning assistant.
+${intakeRoomPrompt(room)}
 
 Your job is to interview the homeowner so we can produce a reliable cost, labor, and value-added estimate. Ask ONE concise follow-up question at a time. Never ask more than one question per message.
 
@@ -168,6 +242,7 @@ function extractJsonBlock(text: string): string {
 export async function askNextIntakeQuestion(
   input: NextQuestionInput,
   apiKey: string,
+  room?: RoomMeasurements | null,
 ): Promise<IntakeResponse> {
   const gateway = createLovableAiGatewayProvider(apiKey);
   const model = gateway(INTAKE_MODEL);
@@ -192,7 +267,7 @@ export async function askNextIntakeQuestion(
     const { text } = await generateText({
       model,
       messages,
-      system: intakeSystemPrompt(),
+      system: intakeSystemPrompt(room),
     });
 
     const parsed = JSON.parse(extractJsonBlock(text));

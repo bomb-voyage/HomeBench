@@ -11,7 +11,9 @@ import {
   DollarSign,
   TrendingUp,
   CheckCircle2,
+  Ruler,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,7 @@ import {
   estimateStatusLabel,
 } from "@/lib/projects-data";
 import { homeQuery } from "@/lib/home-data";
+import { measureAreaWithCamera, measureWithCamera, useNativeArSupport } from "@/lib/native-ar";
 import {
   updateProject,
   deleteProject,
@@ -163,6 +166,40 @@ function ProjectDetailPage() {
     setDraftSpec((prev) => ({ ...prev, [key]: value }));
     setPreview(null);
   };
+
+  const ar = useNativeArSupport();
+  const [measuringKey, setMeasuringKey] = useState<string | null>(null);
+
+  async function handleSpecMeasure(key: string) {
+    const kind = specMeasureKind(key);
+    if (!kind) return;
+    const numeric = typeof spec[key] === "number";
+    setMeasuringKey(key);
+    try {
+      if (kind === "length") {
+        const last = (await measureWithCamera(`Measure the ${key.replace(/_/g, " ")}`))?.at(-1);
+        if (!last) return;
+        const feet = Math.round(last.feet * 10) / 10;
+        setDraftField(key, numeric ? feet : `${feet} ft`);
+        toast.success(`Measured ${last.label}.`);
+        return;
+      }
+      const area = await measureAreaWithCamera();
+      if (!area) return;
+      if (kind === "area") {
+        setDraftField(key, numeric ? area.areaSqFt : `${area.areaSqFt} sq ft`);
+      } else {
+        setDraftField(key, `${area.lengthFt} × ${area.widthFt} ft`);
+      }
+      toast.success(`Measured ${area.label} (${area.areaSqFt} sq ft).`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error && error.message ? error.message : "Measuring failed. Please try again.",
+      );
+    } finally {
+      setMeasuringKey(null);
+    }
+  }
   const discardDraft = () => {
     setDraftSpec(JSON.parse(savedSpecJson));
     setPreview(null);
@@ -466,10 +503,12 @@ function ProjectDetailPage() {
         </Card>
       )}
 
+      {/* On phones both columns dissolve into one list (max-lg:contents) and the
+          order classes put Project specs ahead of the work plan. */}
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="space-y-6">
+        <div className="max-lg:contents lg:space-y-6">
           {project.estimate_notes && (
-            <Card>
+            <Card className="max-lg:order-1">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Estimate notes</CardTitle>
               </CardHeader>
@@ -479,7 +518,7 @@ function ProjectDetailPage() {
             </Card>
           )}
 
-          <Card>
+          <Card className="max-lg:order-3">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Step-by-step work plan</CardTitle>
               <CardDescription>
@@ -517,13 +556,13 @@ function ProjectDetailPage() {
               )}
             </CardContent>
           </Card>
-          <div className="flex justify-end">
+          <div className="flex justify-end max-lg:order-4">
             <CompleteProjectDialog projectId={projectId} isDone={project.status === "done"} size="lg" actualCost={project.actual_cost} actualHours={project.actual_hours} />
           </div>
         </div>
 
-        <div className="space-y-6">
-          <Card>
+        <div className="max-lg:contents lg:space-y-6">
+          <Card className="max-lg:order-2">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Project specs</CardTitle>
               <CardDescription>Edit any detail and re-estimate</CardDescription>
@@ -683,18 +722,37 @@ function ProjectDetailPage() {
                             )}
                           </div>
                         ) : (
-                          <Input
-                            className="h-8 text-sm"
-                            value={current}
-                            onChange={(e) =>
-                              setDraftField(
-                                key,
-                                typeof spec[key] === "number" && e.target.value !== "" && !Number.isNaN(Number(e.target.value))
-                                  ? Number(e.target.value)
-                                  : e.target.value,
-                              )
-                            }
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              className="h-8 text-sm"
+                              value={current}
+                              onChange={(e) =>
+                                setDraftField(
+                                  key,
+                                  typeof spec[key] === "number" && e.target.value !== "" && !Number.isNaN(Number(e.target.value))
+                                    ? Number(e.target.value)
+                                    : e.target.value,
+                                )
+                              }
+                            />
+                            {ar.measure && specMeasureKind(key) ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="size-8 shrink-0"
+                                aria-label={`Measure ${key.replace(/_/g, " ")} with camera`}
+                                disabled={measuringKey !== null}
+                                onClick={() => handleSpecMeasure(key)}
+                              >
+                                {measuringKey === key ? (
+                                  <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                  <Ruler className="size-4" />
+                                )}
+                              </Button>
+                            ) : null}
+                          </div>
                         )}
                       </div>
                     );
@@ -718,7 +776,7 @@ function ProjectDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="max-lg:order-5">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Tool list</CardTitle>
               <CardDescription>Owned, required and recommended tools</CardDescription>
@@ -734,7 +792,7 @@ function ProjectDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="max-lg:order-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Refine by chat</CardTitle>
               <CardDescription>Ask to change materials, scope, or style</CardDescription>
@@ -961,4 +1019,14 @@ function ToolRow({ tool, projectId }: { projectId: string; tool: {
       </div>
     </div>
   );
+}
+
+/** Which spec fields get a camera ruler: areas and dimensions take two sides, lengths one. */
+function specMeasureKind(key: string): "area" | "dimensions" | "length" | null {
+  const k = key.toLowerCase();
+  if (k === "room") return null;
+  if (/sq_?ft|square|area/.test(k)) return "area";
+  if (/dimension/.test(k)) return "dimensions";
+  if (/length|width|height|depth|linear|perimeter|distance|feet|(^|_)ft$/.test(k)) return "length";
+  return null;
 }

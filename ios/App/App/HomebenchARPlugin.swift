@@ -7,10 +7,12 @@ import Capacitor
 /// Native camera features exposed to the website as `HomebenchAR`.
 ///
 /// JS usage (see src/lib/native-ar.ts):
-///   HomebenchAR.getSupport()  -> { measure, roomScan, lidar }
-///   HomebenchAR.scanRoom()    -> { lengthFt, widthFt, ceilingHeightFt, wallCount, doorCount, windowCount, openingCount }
-///   HomebenchAR.measure()     -> { measurements: [{ meters, feet, label }] }
-/// Both scanRoom and measure reject with code "CANCELLED" when the user backs out.
+///   HomebenchAR.getSupport()                   -> { measure, roomScan, lidar }
+///   HomebenchAR.scanRoom({ mode })             -> RoomDimensions.asJSObject() (mode: "room" | "closet")
+///   HomebenchAR.measure({ instructions })      -> { measurements: [{ meters, feet, label }] }
+///   HomebenchAR.getAppLock()                   -> { enabled, available, biometry }
+///   HomebenchAR.setAppLock({ enabled })        -> same as getAppLock
+/// scanRoom and measure reject with code "CANCELLED" when the user backs out.
 @objc(HomebenchARPlugin)
 public class HomebenchARPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "HomebenchARPlugin"
@@ -18,7 +20,9 @@ public class HomebenchARPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "getSupport", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "scanRoom", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "measure", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "measure", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getAppLock", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setAppLock", returnType: CAPPluginReturnPromise)
     ]
 
     @objc func getSupport(_ call: CAPPluginCall) {
@@ -34,8 +38,9 @@ public class HomebenchARPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Room scanning needs an iPhone with LiDAR (Pro models).", "UNSUPPORTED")
             return
         }
+        let mode: RoomScanViewController.Mode = call.getString("mode") == "closet" ? .closet : .room
         withCameraAccess(call) { [weak self] in
-            let scanner = RoomScanViewController()
+            let scanner = RoomScanViewController(mode: mode)
             scanner.onFinish = { result in
                 switch result {
                 case .success(let dimensions):
@@ -55,8 +60,10 @@ public class HomebenchARPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("This device doesn't support AR measuring.", "UNSUPPORTED")
             return
         }
+        let instructions = call.getString("instructions")
         withCameraAccess(call) { [weak self] in
             let measurer = MeasureViewController()
+            measurer.instructions = instructions
             measurer.onFinish = { meters in
                 guard let meters = meters else {
                     call.reject("Measuring cancelled", "CANCELLED")
@@ -73,6 +80,31 @@ public class HomebenchARPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             self?.present(measurer, for: call)
         }
+    }
+
+    @objc func getAppLock(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            call.resolve(Self.appLockState())
+        }
+    }
+
+    @objc func setAppLock(_ call: CAPPluginCall) {
+        guard let enabled = call.getBool("enabled") else {
+            call.reject("Missing 'enabled'", "BAD_ARGUMENT")
+            return
+        }
+        DispatchQueue.main.async {
+            AppLock.shared.isEnabled = enabled
+            call.resolve(Self.appLockState())
+        }
+    }
+
+    private static func appLockState() -> [String: Any] {
+        [
+            "enabled": AppLock.shared.isEnabled,
+            "available": AppLock.shared.isAvailable,
+            "biometry": AppLock.shared.biometryName
+        ]
     }
 
     // MARK: - Helpers

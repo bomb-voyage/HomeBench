@@ -34,6 +34,11 @@ export type RoomRow = {
   floor_level: string;
   notes: string | null;
   area_sqft: number | null;
+  floor_area_sqft: number | null;
+  wall_area_sqft: number | null;
+  cabinet_area_sqft: number | null;
+  has_closet: boolean;
+  closet_area_sqft: number | null;
 };
 
 export const homeQuery = queryOptions({

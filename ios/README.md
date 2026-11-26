@@ -8,11 +8,14 @@ camera features through a Swift plugin.
 | App config (URL, bundle ID) | `capacitor.config.json` |
 | Offline page shown if the site can't load | `capacitor-shell/error.html` |
 | Plugin registration | `ios/App/App/HomebenchBridgeViewController.swift` |
+| Face ID app lock | `ios/App/App/AppLock.swift` (hooked up in `SceneDelegate.swift`) |
 | JS-facing plugin (`HomebenchAR`) | `ios/App/App/HomebenchARPlugin.swift` |
-| Room scan (RoomPlan, LiDAR iPhones) | `ios/App/App/RoomScanViewController.swift` |
+| Room and closet scan (RoomPlan, LiDAR iPhones) | `ios/App/App/RoomScanViewController.swift` |
 | AR tape measure (any ARKit iPhone) | `ios/App/App/MeasureViewController.swift` |
 | Web wrapper + React hook | `src/lib/native-ar.ts` |
 | Camera buttons in the room dialog | `src/routes/_authenticated/rooms.tsx` |
+| Camera rulers on project spec fields | `src/routes/_authenticated/projects.$projectId.tsx` |
+| Face ID on/off switch (Account page) | `src/components/app-lock-card.tsx` |
 
 ## First run
 
@@ -45,6 +48,12 @@ In the app, the **Add room / Edit room** dialog gets:
   aligned to its longest wall.
 - A **ruler button** next to each dimension. It opens the tape measure; the last
   measurement taken fills in that field.
+- **Surface areas:** floor area (the true outline, so L-shaped rooms are right,
+  including under cabinets), wall area (doors and windows subtracted) and the
+  cabinet and built-in footprint. The room scan fills them in; otherwise they're typed.
+- **Room has a closet**, with a **Scan closet** button that tells the user to
+  open the closet door first. A room's sq ft includes the closet when the switch
+  is on, and the estimate AI asks whether flooring should include it.
 
 Both screens hand the numbers back to the web form. The existing Save button and
 Supabase session handle the rest, so nothing on the native side touches sign-in.
@@ -67,4 +76,11 @@ Run `npx cap sync ios` after any change to `capacitor.config.json`.
   third-party login, App Store rules also require Sign in with Apple.
 - **App icon and splash screen** are Capacitor placeholders. Generate real ones
   from a 1024×1024 PNG with `npx @capacitor/assets generate --ios`.
-- **Minimum iOS is 16.0**, which RoomPlan requires.
+- **Minimum iOS is 17.0**, needed for RoomPlan's floor outlines.
+
+## Face ID
+
+The app asks for Face ID (falling back to the passcode) when it launches, and
+when it returns after more than 2 minutes in the background. While it's in the
+background, a cover hides the screen in the app switcher. It's on by default
+and can be turned off on the Account page.

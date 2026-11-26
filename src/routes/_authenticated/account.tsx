@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AppLockCard } from "@/components/app-lock-card";
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -172,6 +173,8 @@ function AccountPage() {
             </form>
           </CardContent>
         </Card>
+
+        <AppLockCard />
       </div>
     </AppShell>
   );

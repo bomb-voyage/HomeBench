@@ -10,6 +10,8 @@ import simd
 /// measurement in meters (most recent last); Cancel returns nil.
 final class MeasureViewController: UIViewController, ARSessionDelegate {
     var onFinish: (([Float]?) -> Void)?
+    /// Optional banner text, e.g. "Measure the length, then the width".
+    var instructions: String?
 
     private struct Segment {
         let meters: Float
@@ -22,6 +24,7 @@ final class MeasureViewController: UIViewController, ARSessionDelegate {
     private let distanceLabel = PaddedLabel()
     private let hintLabel = PaddedLabel()
     private let historyLabel = UILabel()
+    private let instructionsLabel = PaddedLabel()
 
     private let addButton = UIButton(type: .system)
     private let undoButton = UIButton(type: .system)
@@ -78,6 +81,14 @@ final class MeasureViewController: UIViewController, ARSessionDelegate {
         historyLabel.shadowColor = .black
         historyLabel.shadowOffset = CGSize(width: 0, height: 1)
 
+        instructionsLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        instructionsLabel.textColor = .black
+        instructionsLabel.backgroundColor = accent
+        instructionsLabel.numberOfLines = 0
+        instructionsLabel.textAlignment = .center
+        instructionsLabel.text = instructions
+        instructionsLabel.isHidden = (instructions ?? "").isEmpty
+
         configureTextButton(cancelButton, title: "Cancel", prominent: false, action: #selector(cancelTapped))
         configureTextButton(doneButton, title: "Done", prominent: true, action: #selector(doneTapped))
         configureIconButton(addButton, systemName: "plus", size: 34, diameter: 76, action: #selector(addTapped))
@@ -87,7 +98,7 @@ final class MeasureViewController: UIViewController, ARSessionDelegate {
         topBar.axis = .horizontal
         topBar.alignment = .center
 
-        [topBar, distanceLabel, hintLabel, historyLabel, addButton, undoButton].forEach {
+        [topBar, instructionsLabel, distanceLabel, hintLabel, historyLabel, addButton, undoButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
@@ -103,7 +114,15 @@ final class MeasureViewController: UIViewController, ARSessionDelegate {
             topBar.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -16),
             topBar.topAnchor.constraint(equalTo: guide.topAnchor, constant: 8),
 
-            historyLabel.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 12),
+            instructionsLabel.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 12),
+            instructionsLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            instructionsLabel.leadingAnchor.constraint(greaterThanOrEqualTo: guide.leadingAnchor, constant: 24),
+            instructionsLabel.trailingAnchor.constraint(lessThanOrEqualTo: guide.trailingAnchor, constant: -24),
+
+            historyLabel.topAnchor.constraint(
+                equalTo: instructionsLabel.isHidden ? topBar.bottomAnchor : instructionsLabel.bottomAnchor,
+                constant: 12
+            ),
             historyLabel.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -16),
             historyLabel.leadingAnchor.constraint(greaterThanOrEqualTo: guide.leadingAnchor, constant: 16),
 

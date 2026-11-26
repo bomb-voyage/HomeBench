@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, Ruler, ScanLine } from "lucide-react";
+import { DoorOpen, Plus, Trash2, Pencil, Ruler, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -12,6 +12,7 @@ import { measureWithCamera, scanRoomWithCamera, useNativeArSupport } from "@/lib
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +56,14 @@ type RoomForm = {
   ceiling_height_ft: string;
   floor_level: string;
   notes: string;
+  floor_area_sqft: string;
+  wall_area_sqft: string;
+  cabinet_area_sqft: string;
+  has_closet: boolean;
+  closet_area_sqft: string;
 };
+
+type TextField = Exclude<keyof RoomForm, "has_closet">;
 
 const EMPTY_ROOM: RoomForm = {
   name: "",
@@ -65,6 +73,11 @@ const EMPTY_ROOM: RoomForm = {
   ceiling_height_ft: "8",
   floor_level: "main",
   notes: "",
+  floor_area_sqft: "",
+  wall_area_sqft: "",
+  cabinet_area_sqft: "",
+  has_closet: false,
+  closet_area_sqft: "",
 };
 
 type DimensionKey = "length_ft" | "width_ft" | "ceiling_height_ft";
@@ -74,6 +87,36 @@ const DIMENSION_FIELDS: { key: DimensionKey; id: string; label: string }[] = [
   { key: "width_ft", id: "width", label: "Width" },
   { key: "ceiling_height_ft", id: "ceiling", label: "Ceiling" },
 ];
+
+const SURFACE_FIELDS: {
+  key: "floor_area_sqft" | "wall_area_sqft" | "cabinet_area_sqft";
+  id: string;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    key: "floor_area_sqft",
+    id: "floor-area",
+    label: "Floor area",
+    hint: "Includes under cabinets, not the closet. Blank uses length × width.",
+  },
+  {
+    key: "wall_area_sqft",
+    id: "wall-area",
+    label: "Wall area",
+    hint: "Doors and windows subtracted.",
+  },
+  {
+    key: "cabinet_area_sqft",
+    id: "cabinet-area",
+    label: "Cabinets & built-ins",
+    hint: "Floor covered by cabinets, tubs and appliances.",
+  },
+];
+
+function numToField(value: number | null | undefined) {
+  return value == null ? "" : value.toString();
+}
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -96,8 +139,7 @@ function RoomsPage() {
   const ar = useNativeArSupport();
   const [cameraBusy, setCameraBusy] = useState(false);
 
-  const set = (key: keyof RoomForm) => (value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const set = (key: TextField) => (value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
   function openNew() {
     setEditing(null);
@@ -115,6 +157,11 @@ function RoomsPage() {
       ceiling_height_ft: room.ceiling_height_ft?.toString() ?? "",
       floor_level: room.floor_level,
       notes: room.notes ?? "",
+      floor_area_sqft: numToField(room.floor_area_sqft),
+      wall_area_sqft: numToField(room.wall_area_sqft),
+      cabinet_area_sqft: numToField(room.cabinet_area_sqft),
+      has_closet: room.has_closet,
+      closet_area_sqft: numToField(room.closet_area_sqft),
     });
     setOpen(true);
   }
@@ -129,12 +176,33 @@ function RoomsPage() {
         length_ft: result.lengthFt.toString(),
         width_ft: result.widthFt.toString(),
         ceiling_height_ft: result.ceilingHeightFt.toString(),
+        floor_area_sqft: result.floorAreaSqFt.toString(),
+        wall_area_sqft: result.wallAreaSqFt.toString(),
+        cabinet_area_sqft: result.cabinetAreaSqFt.toString(),
       }));
       toast.success(
-        `Scanned ${result.lengthFt} × ${result.widthFt} ft with a ${result.ceilingHeightFt} ft ceiling. Check the numbers, then save.`,
+        `Scanned ${Math.round(result.floorAreaSqFt)} sq ft of floor and ${Math.round(result.wallAreaSqFt)} sq ft of wall. Check the numbers, then save.`,
       );
     } catch (error) {
       toast.error(errorMessage(error, "Room scan failed. Please try again."));
+    } finally {
+      setCameraBusy(false);
+    }
+  }
+
+  async function handleScanCloset() {
+    setCameraBusy(true);
+    try {
+      const result = await scanRoomWithCamera("closet");
+      if (!result) return;
+      setForm((prev) => ({
+        ...prev,
+        has_closet: true,
+        closet_area_sqft: result.floorAreaSqFt.toString(),
+      }));
+      toast.success(`Closet scanned: ${Math.round(result.floorAreaSqFt)} sq ft.`);
+    } catch (error) {
+      toast.error(errorMessage(error, "Closet scan failed. Please try again."));
     } finally {
       setCameraBusy(false);
     }
@@ -173,6 +241,11 @@ function RoomsPage() {
         ceiling_height_ft: numOrNull(form.ceiling_height_ft),
         floor_level: form.floor_level,
         notes: form.notes.trim() || null,
+        floor_area_sqft: numOrNull(form.floor_area_sqft),
+        wall_area_sqft: numOrNull(form.wall_area_sqft),
+        cabinet_area_sqft: numOrNull(form.cabinet_area_sqft),
+        has_closet: form.has_closet,
+        closet_area_sqft: form.has_closet ? numOrNull(form.closet_area_sqft) : null,
       };
 
       if (editing) {
@@ -345,7 +418,7 @@ function RoomsPage() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit room" : "Add room"}</DialogTitle>
             <DialogDescription>Measure wall to wall in feet.</DialogDescription>
@@ -438,6 +511,74 @@ function RoomsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium">Surface areas (sq ft)</p>
+                <p className="text-xs text-muted-foreground">
+                  {ar.roomScan
+                    ? "Filled in by the room scan. Used to refine project estimates."
+                    : "Optional. Used to refine project estimates."}
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {SURFACE_FIELDS.map((field) => (
+                  <div key={field.key} className="space-y-1">
+                    <Label htmlFor={field.id}>{field.label}</Label>
+                    <Input
+                      id={field.id}
+                      inputMode="decimal"
+                      value={form[field.key]}
+                      onChange={(e) => set(field.key)(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">{field.hint}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3 rounded-md border border-border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="has-closet" className="flex items-center gap-2">
+                  <DoorOpen className="size-4" />
+                  Room has a closet
+                </Label>
+                <Switch
+                  id="has-closet"
+                  checked={form.has_closet}
+                  onCheckedChange={(checked) =>
+                    setForm((prev) => ({ ...prev, has_closet: checked }))
+                  }
+                />
+              </div>
+              {form.has_closet ? (
+                <div className="space-y-2">
+                  <Label htmlFor="closet-area">Closet floor area (sq ft)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="closet-area"
+                      inputMode="decimal"
+                      value={form.closet_area_sqft}
+                      onChange={(e) => set("closet_area_sqft")(e.target.value)}
+                    />
+                    {ar.roomScan ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="shrink-0"
+                        disabled={cameraBusy}
+                        onClick={handleScanCloset}
+                      >
+                        <ScanLine className="size-4" />
+                        Scan closet
+                      </Button>
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Counted in the room&apos;s square footage. Estimates will ask whether to include
+                    it.
+                  </p>
+                </div>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>

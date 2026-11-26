@@ -24,6 +24,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Homebench uses the camera to measure distances and scan rooms so your room dimensions are filled in for you.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Homebench uses Face ID to unlock the app and keep your home details private.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
