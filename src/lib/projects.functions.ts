@@ -239,7 +239,7 @@ export const nextIntakeQuestion = createServerFn({ method: "POST" })
       throw new Error("AI gateway is not configured. Please set LOVABLE_API_KEY.");
     }
     const ctx = await loadEstimateContext(context.supabase, data.homeId, data.roomId);
-    return askNextIntakeQuestion(data, apiKey, ctx.room);
+    return askNextIntakeQuestion(data, apiKey, ctx.room, ctx.roomType);
   });
 
 async function loadEstimateContext(

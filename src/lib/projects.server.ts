@@ -76,7 +76,7 @@ function roomMeasurementsPrompt(room: RoomMeasurements | null | undefined): stri
 ${lines.join("\n")}
 How to use these:
 - Prefer these numbers over guesses, and don't ask the homeowner for measurements listed here.
-- Floor projects (flooring, tile, carpet, refinishing): flooring normally isn't installed under cabinets or tubs, so use the open floor area unless the project also replaces the cabinets. Include the closet floor unless the spec's "include_closet" is "no".
+- Floor projects (flooring, tile, carpet, refinishing): flooring normally isn't installed under cabinets or tubs, so use the open floor area. Use the total floor area instead if the spec's "flooring_under_cabinets" is "yes" (for example, cabinets being removed or replaced). Include the closet floor unless the spec's "include_closet" is "no".
 - Wall projects (paint, wallpaper, wainscoting): use the wall area. Closet walls aren't included; add them only if the spec says to.`;
 }
 
@@ -107,21 +107,36 @@ function homeContextPrompt(input: Pick<GenerateEstimateInput, "homeValue" | "sco
   );
 }
 
-function intakeRoomPrompt(room: RoomMeasurements | null | undefined): string {
+/** Rooms where a scan's "cabinets" are almost always real cabinets and fixtures. */
+const CABINET_ROOM_TYPES = new Set(["kitchen", "bathroom", "laundry"]);
+
+function intakeRoomPrompt(
+  room: RoomMeasurements | null | undefined,
+  roomType?: string | null,
+): string {
   const measurements = roomMeasurementsPrompt(room);
   if (!measurements) return "";
   const closetRule = room?.hasCloset
     ? `
 - This room has a closet. If the project involves the floor and the spec has no "include_closet" key yet, ask whether to include the closet (mention its size if known), and record the answer as spec.include_closet = "yes" or "no".`
     : "";
+  const cabinetRule =
+    room?.cabinetAreaSqFt != null && room.cabinetAreaSqFt > 0
+      ? `
+- This room has about ${sqft(room.cabinetAreaSqFt)} of cabinets and built-ins. If the project involves the floor and the spec has no "flooring_under_cabinets" key yet, ask whether the new flooring goes around them or under them (for example, if the cabinets are being removed or replaced). Mention the size.${
+          roomType && CABINET_ROOM_TYPES.has(roomType)
+            ? ""
+            : " In the question, also say briefly that the camera scan sometimes counts furniture such as dressers and bookshelves as cabinets, so that number may include some furniture."
+        } Record the answer as spec.flooring_under_cabinets = "yes" (under) or "no" (around).`
+      : "";
   return `
 ${measurements}
-- Copy any of these measurements the project needs into the spec (e.g. "floor_area_sqft", "wall_area_sqft") instead of asking for them.${closetRule}`;
+- Copy any of these measurements the project needs into the spec (e.g. "floor_area_sqft", "wall_area_sqft") instead of asking for them.${closetRule}${cabinetRule}`;
 }
 
-function intakeSystemPrompt(room?: RoomMeasurements | null): string {
+function intakeSystemPrompt(room?: RoomMeasurements | null, roomType?: string | null): string {
   return `You are Homebench, a friendly DIY home-project planning assistant.
-${intakeRoomPrompt(room)}
+${intakeRoomPrompt(room, roomType)}
 
 Your job is to interview the homeowner so we can produce a reliable cost, labor, and value-added estimate. Ask ONE concise follow-up question at a time. Never ask more than one question per message.
 
@@ -243,6 +258,7 @@ export async function askNextIntakeQuestion(
   input: NextQuestionInput,
   apiKey: string,
   room?: RoomMeasurements | null,
+  roomType?: string | null,
 ): Promise<IntakeResponse> {
   const gateway = createLovableAiGatewayProvider(apiKey);
   const model = gateway(INTAKE_MODEL);
@@ -267,7 +283,7 @@ export async function askNextIntakeQuestion(
     const { text } = await generateText({
       model,
       messages,
-      system: intakeSystemPrompt(room),
+      system: intakeSystemPrompt(room, roomType),
     });
 
     const parsed = JSON.parse(extractJsonBlock(text));
